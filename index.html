@@ -1,4 +1,37 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* GRAN v1.1 — согласованные точечные изменения */
+html{scroll-behavior:smooth;scroll-padding-top:95px}
+#why-us{background:#fff}
+.why-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px;margin-top:36px}
+.why-metric{border-top:1px solid var(--line);padding-top:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.why-metric strong{font:400 clamp(34px,4.1vw,58px) var(--fd);letter-spacing:-.055em;white-space:nowrap}
+.why-metric span{color:var(--ink2);font-size:14px;line-height:1.5;max-width:220px}
+.why-foot{margin-top:30px;font-size:12px;color:var(--ink2)}
+.prj .stage{position:relative}
+.prj-overlay{position:absolute;left:12px;bottom:12px;right:12px;z-index:4;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.prj-overlay>div{background:rgba(255,255,255,.94);border:1px solid rgba(185,194,205,.8);border-radius:7px;padding:7px 10px;display:flex;flex-direction:column;gap:3px;min-width:75px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.prj-overlay strong{font:600 15px var(--fd);color:var(--ink)}.prj-overlay span{font-size:10px;color:var(--ink2)}
+.calc2{grid-template-columns:minmax(320px,390px) minmax(0,1fr);gap:18px;align-items:stretch}
+.calc2>.panel{height:100%;box-sizing:border-box}
+.calcR{grid-template-rows:minmax(360px,1fr) auto;gap:14px}
+.calc2 .stage{height:100%;min-height:360px}
+.res2{gap:12px;padding:20px 22px}
+.kpbox{grid-template-columns:minmax(0,1.5fr) minmax(210px,1fr);gap:22px;padding:20px 22px}
+.kpnote{gap:12px}
+.contract-v11{margin-top:32px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.8fr);gap:16px}
+.contract-copy{background:#f7f8fa;border:1px solid var(--line);border-radius:var(--r);padding:30px}
+.contract-kicker{font:600 11px var(--fm);letter-spacing:.12em;color:var(--accent)}
+.contract-copy h3{font:600 clamp(23px,2.4vw,32px) var(--fd);margin:16px 0 12px}
+.contract-copy p{max-width:550px;color:var(--ink2);line-height:1.65}
+.contract-terms{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px}
+.contract-terms span{padding-top:12px;border-top:1px solid var(--line);font-size:13px}
+.contract-download{background:var(--ink);color:white;border-radius:var(--r);padding:30px;display:flex;flex-direction:column;align-items:flex-start;gap:13px;justify-content:center}
+.contract-file-icon{font-size:42px;color:#9eb5e6}.contract-download strong{font:600 23px var(--fd)}
+.contract-download>span:not(.contract-file-icon){color:#cbd3df;font-size:13px}
+.contract-download .btn{margin-top:10px}
+@media(max-width:900px){.calc2{grid-template-columns:minmax(0,1fr)}.calc2 .stage{height:390px}.calc2>.panel{height:auto}.why-grid{gap:16px}}
+@media(max-width:640px){.why-grid{grid-template-columns:1fr;gap:22px}.why-metric strong{font-size:42px}.contract-v11{grid-template-columns:1fr}.contract-terms{grid-template-columns:1fr}.kpbox{grid-template-columns:1fr}.prj-overlay{gap:4px}.prj-overlay>div{padding:5px 7px}.prj-overlay strong{font-size:12px}}
+</style></head><body>
 <!doctype html>
 <html lang="ru">
 <head>
@@ -504,7 +537,7 @@ footer .legal a{text-decoration:underline;text-underline-offset:2px}
       <span>ГРАНЬ<small>цифровые модели для АГР</small></span>
     </a>
     <nav class="main" aria-label="Разделы">
-      <a href="models.html">Модели</a><a href="#projects">Проекты</a><a href="#calc">Стоимость</a><a href="#forms">Документы</a><a href="#norms">Требования</a><a href="#faq">Вопросы</a>
+      <a href="#models">Модели</a><a href="#projects">Проекты</a><a href="#calc">Стоимость</a><a href="#forms">Документы</a><a href="#norms">Требования</a><a href="#faq">Вопросы</a>
     </nav>
         <a href="#lead" class="btn btn-primary btn-sm">Отправить буклет</a>
   </div>
@@ -600,6 +633,8 @@ footer .legal a{text-decoration:underline;text-underline-offset:2px}
   </div>
 </section>
 
+<section id="why-us"><div class="wrap"><div class="label">О команде</div><h2>Почему выбирают «ГРАНЬ»</h2><p class="lead">Опыт специалистов команды в подготовке и согласовании цифровых моделей для архитектурно-градостроительных решений.</p><div class="why-grid"><div class="why-metric"><strong>3+</strong><span>года опыта специалистов в сфере АГР</span></div><div class="why-metric"><strong>3,5 млн м²</strong><span>согласованных площадей в ДГП</span></div><div class="why-metric"><strong>20</strong><span>IFC-моделей, включая знаковые объекты Москвы</span></div></div><p class="why-foot">Показатели отражают совокупный опыт специалистов команды, а не срок существования компании.</p></div></section>
+
 <section id="calc">
   <div class="wrap">
     <div class="label">Стоимость <span class="demo-tag">формула — заглушка</span></div>
@@ -676,28 +711,14 @@ footer .legal a{text-decoration:underline;text-underline-offset:2px}
 </section>
 
 <section id="forms">
-  <div class="wrap">
-    <div class="label">Документы</div>
-    <h2>Наши типовые формы</h2>
-    <p class="lead">Чтобы вы могли заранее ознакомиться с условиями: типовой договор и презентации по каждой модели.</p>
-    <div class="docs">
-      <div class="dcard dark">
-        <div class="ty"><h3>Типовой договор</h3><span class="fmt">DOCX</span></div>
-        <p>Договор на разработку цифровых моделей для АГР с приложениями. Условия конкретного проекта согласуем перед подписанием.</p>
-        <ul><li>Предмет, состав моделей и требования</li><li>Оплата 50 / 40 / 10 %</li><li>Устранение замечаний ДГП без доплаты</li><li>ТЗ, исходные данные, календарный план</li></ul>
-        <a class="btn btn-white" href="files/GRAN_Typovoy_dogovor.docx" download="ГРАНЬ_Типовой_договор.docx">Скачать договор</a>
-      </div>
-      <div class="dcard">
-        <div class="ty"><h3>Презентации</h3><span class="fmt">PDF</span></div>
-        <p>Назначение, состав, требования и исходные данные по каждой модели.</p>
-        <div class="doclist">
-          <a href="files/GRAN_NPM.pdf" download="ГРАНЬ_НПМ_презентация.pdf"><span>НПМ для АГР<br><small>8 слайдов</small></span><span aria-hidden="true">↓</span></a>
-          <a href="files/GRAN_VPM.pdf" download="ГРАНЬ_ВПМ_презентация.pdf"><span>ВПМ для АГР<br><small>8 слайдов</small></span><span aria-hidden="true">↓</span></a>
-          <a href="files/GRAN_CIM.pdf" download="ГРАНЬ_ЦИМ_презентация.pdf"><span>ЦИМ для АГР<br><small>8 слайдов</small></span><span aria-hidden="true">↓</span></a>
-        </div>
-      </div>
-    </div>
+ <div class="wrap">
+  <div class="label">Документы</div><h2>Типовой договор</h2>
+  <p class="lead">Условия сотрудничества, состав работ и порядок согласования фиксируем до начала проекта.</p>
+  <div class="contract-v11">
+   <div class="contract-copy"><span class="contract-kicker">ДОКУМЕНТАЦИЯ / ГРАНЬ</span><h3>Прозрачные условия работы</h3><p>Ознакомьтесь с типовым договором на разработку цифровых моделей для АГР. Индивидуальные условия согласуем до подписания.</p><div class="contract-terms"><span>01 / Состав моделей и ТЗ</span><span>02 / Этапы и сроки</span><span>03 / Оплата 50 / 40 / 10 %</span><span>04 / Работа с замечаниями</span></div></div>
+   <div class="contract-download"><span class="contract-file-icon">▤</span><strong>Типовой договор</strong><span>DOCX · предварительный образец</span><a class="btn btn-white" href="files/GRAN_Typovoy_dogovor.docx" download="ГРАНЬ_Типовой_договор.docx">Скачать договор ↓</a></div>
   </div>
+ </div>
 </section>
 
 <section id="norms">
@@ -955,8 +976,8 @@ let setMode = () => {};
   const area=B.reduce((s,b)=>s+b.w*b.d*b.f*.92,0);
   const STATS={
     npm:{rows:[['Формат','FBX · двоичный'],['Треугольников',fmt(tN)]]},
-    vpm:{rows:[['Формат','FBX · PBR · geojson'],['Треугольников',fmt(tV)],['Состав','здания + благоустройство'],['Проверка','Unreal Engine']]},
-    cim:{rows:[['Схема','IFC'],['Состав','АР + BIM: стены, лестницы, ОВ, ВК'],['IfcBuildingStorey',fmt(storeys)],['IfcSpace',fmt(storeys*9)],['Площадь, ЦИМ АР',fmt(area)+' м²']],hint:'Наведите на этаж, нажмите на здание'}
+    vpm:{rows:[['Формат','FBX · PBR']]},
+    cim:{rows:[['Формат','IFC'],['Площадь',fmt(area)+' м²']],hint:'Наведите на этаж, нажмите на здание'}
   };
   const renderStats=m=>{const s=STATS[m];$('#vstats').innerHTML=s.rows.map(([a,b])=>`<div class="row"><span>${a}</span><b>${b}</b></div>`).join('')+(s.hint?`<div class="row"><span>${s.hint}</span></div>`:'')};
 
@@ -1073,7 +1094,7 @@ function mats() {
     rubber2: SL(0x4F86B8, { roughness: 1 }), wood: SL(0x9C7A55), sand: SL(0xE8D7A8, { roughness: 1 }), soil: SL(0x6B5340, { roughness: 1 }),
     car: SL(0xFFFFFF, { roughness: .45, metalness: .15 }), crown: SL(0xFFFFFF, { flatShading: true, roughness: .9 }), birch: SL(0xEDEAE2), lampHead: SL(0xFFF6D8, { emissive: 0x6A5A30 }),
     rail: S(0x9FC3DC, { transparent: true, opacity: .4, metalness: .3, roughness: .1 }),
-    npm: new THREE.MeshLambertMaterial({ color: 0xFAFAFA }), npmEdge: new THREE.LineBasicMaterial({ color: 0x3F7CC4, transparent: true, opacity: .6 }), npmTree: new THREE.MeshLambertMaterial({ color: 0xD5DCD2 }),
+    npm: new THREE.MeshLambertMaterial({ color: 0xE4D6BC }), npmEdge: new THREE.LineBasicMaterial({ color: 0xA89575, transparent: true, opacity: .65 }), npmTree: new THREE.MeshLambertMaterial({ color: 0xD5DCD2 }),
     cim: new THREE.MeshStandardMaterial({ color: 0x2E86C1, transparent: true, opacity: .22, depthWrite: false }), cimEdge: new THREE.LineBasicMaterial({ color: 0x1F5F8C, transparent: true, opacity: .75 }),
     cimGhost: new THREE.MeshStandardMaterial({ color: 0x2E86C1, transparent: true, opacity: .07, depthWrite: false }), cimGhostEdge: new THREE.LineBasicMaterial({ color: 0x1F5F8C, transparent: true, opacity: .35 }),
     cimSite: new THREE.MeshBasicMaterial({ color: 0xD9822B, transparent: true, opacity: .14, depthWrite: false }), cimTree: new THREE.MeshBasicMaterial({ color: 0x3A9D5D, transparent: true, opacity: .35, depthWrite: false }),
@@ -1584,7 +1605,7 @@ const PROJECTS = [
 let modalViewer = null;
 (function () {
   const list = $('#projList');
-  list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="ov tr cap">${p.tag}</div></div><div class="body"><dl class="nda"><dt>Адрес объекта</dt><dd>NDA</dd><dt>Застройщик</dt><dd>NDA</dd></dl><button class="btn btn-primary btn-sm" data-open="${i}">Открыть в 3D</button><div class="facts">${p.facts.map(([a, b]) => `<div><b class="tnum">${a}</b><span>${b}</span></div>`).join('')}</div></div></article>`).join('');
+  list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="ov tr cap">${p.tag}</div><div class="prj-overlay">${p.facts.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div></div><div class="body"><dl class="nda"><dt>Адрес объекта</dt><dd>NDA</dd><dt>Застройщик</dt><dd>NDA</dd></dl><button class="btn btn-primary btn-sm" data-open="${i}">Открыть в 3D</button></div></article>`).join('');
   $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: true }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
   list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openProject(+b.dataset.open) });
   const modal = $('#modal'); let lastFocus = null;
@@ -1633,7 +1654,7 @@ let calcViewer, lastCalc;
     const xa = B[0].x - w / 2 - 12, xb = B[bld - 1].x + w / 2 + 22, za = -(d / 2 + 15), zb = d / 2 + 32;
     // фасады: лёгкие / средние / сложные → уровни детализации 0 / 2 / 3 (средние и сложные — фасады калькулятора с витринами и лоджиями)
     // благоустройство: лёгкое — дорожки к подъездам; среднее — прогулочная дорожка, скамейки, деревья; сложное — детская площадка, клумба, парковка
-    return { site: { w: xb - xa, d: zb - za, x: (xa + xb) / 2, z: (za + zb) / 2 }, seed: 4, buildings: B, facade: [0, 2, 3][p.fac], facCalc: true, land: p.land, bim: p.bim && p.models.cim };
+    return { site: { w: xb - xa, d: zb - za, x: (xa + xb) / 2, z: (za + zb) / 2 }, seed: 4, buildings: B, facade: [0, 2, 3][p.fac], facCalc: true, land: p.land, bim: !!p.models.cim };
   }
   let tmr, pend, lastKey = '';
   function upd() {
