@@ -33,7 +33,7 @@ html{scroll-behavior:smooth;scroll-padding-top:var(--gran-header-height,64px)}
 @media(max-width:640px){.why-grid{grid-template-columns:1fr;gap:22px}.why-metric strong{font-size:42px}.contract-v11{grid-template-columns:1fr}.contract-terms{grid-template-columns:1fr}.kpbox{grid-template-columns:1fr}.prj-overlay{gap:4px}.prj-overlay>div{padding:5px 7px}.prj-overlay strong{font-size:12px}}
 </style></head><body>
 <!doctype html>
-<html lang="ru">
+<html lang="ru"><!-- GRAN 1.7: supersampled facade rendering -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -632,6 +632,9 @@ html{scroll-padding-top:var(--gran-header-height,64px)}
 #models,#projects,#why-us,#calc,#process,#norms,#faq{min-height:0;height:auto;display:block;padding-top:36px;padding-bottom:12px}
 #why-us{padding-top:24px}
 @media(max-width:760px){#models,#projects,#calc,#process,#norms,#faq{padding-top:32px;padding-bottom:8px}}
+
+/* v1.7: smooth reduction of supersampled canvases; no pixelated scaling */
+.viewer canvas,.stage canvas{image-rendering:auto}
 </style>
 </head>
 <body>
@@ -925,6 +928,12 @@ const MODE_DESC = {
   vpm:[['Оставлено','Проёмы, рамы, пояса, балконы, парапеты, благоустройство'],['Удалено','Интерьеры, невидимая геометрия, служебные слои BIM'],['Назначение','Оценка облика в визуальной среде города']],
   cim:[['Структура','Здание, этажи (IfcBuildingStorey), помещения (IfcSpace). Наведите на этаж'],['Атрибуты','Площади, объёмы, отметки. Нажмите на здание, чтобы открыть ТЭП'],['Дисциплины','АР — здания, ПС — участок и границы, БиО — озеленение']]
 };
+// Supersample dense facade grids before browser downsampling, including DPR=1 displays.
+function granRenderScale(w, h, preview) {
+  const desired = preview ? 4 : 3;
+  const budget = 3000000;
+  return Math.max(1, Math.min(desired, Math.sqrt(budget / Math.max(1, w * h))));
+}
 let setMode = () => {};
 (function(){
   const wrap=$('#viewer'), canvas=$('canvas',wrap), descEl=$('#modeDesc');
@@ -936,7 +945,7 @@ let setMode = () => {};
   if(!window.THREE){$('#vstats').innerHTML='<div class="row"><span>Интерактивный просмотр не загрузился. Показан статичный вид</span></div>';return}
   let renderer;
   try{renderer=new THREE.WebGLRenderer({canvas,antialias:true});if(!renderer.getContext())throw 0}catch(e){$('#vstats').innerHTML='<div class="row"><span>WebGL недоступен. Показан статичный вид</span></div>';return}
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setPixelRatio(1);
   renderer.shadowMap.enabled=false; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputEncoding=THREE.sRGBEncoding;
   const BG=0xE9EDF1;
@@ -1009,7 +1018,7 @@ let setMode = () => {};
     const s=new THREE.Mesh(npmStemG,npmTreeM);s.position.set(t.x,.7*t.s,t.z);gNPM.add(s)});
 
   /* ВПМ */
-  const glass=M(0x34465A,{metalness:.55,roughness:.15});
+  const glass=M(0x34465A,{metalness:.05,roughness:.75});
   const frameW=M(0xF3F3F1,{roughness:.6}), frameD=M(0x3B4048,{roughness:.5,metalness:.3});
   const rail=M(0xB8CCD9,{transparent:true,opacity:.45,metalness:.3,roughness:.1});
   const win=[],frm=[],frmD=[],band=[],balc=[],rl=[],pil=[];
@@ -1129,7 +1138,7 @@ let setMode = () => {};
   }
   $('#vinfo .x').addEventListener('click',()=>{$('#vinfo').style.display='none';clearSel()});
 
-  function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();DEF.radius=w<560?300:235}
+  function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;if(!w||!h)return;renderer.setPixelRatio(granRenderScale(w,h,false));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();DEF.radius=w<560?300:235}
   if(window.ResizeObserver)new ResizeObserver(resize).observe(wrap); window.addEventListener('resize',resize); resize(); radius=radiusT=DEF.radius;
   setMode('vpm'); growT=1; gVPM.scale.y=1;
   let visible=true; if(window.IntersectionObserver)new IntersectionObserver(es=>{visible=es[0].isIntersecting}).observe(wrap);
@@ -1187,7 +1196,7 @@ function mats() {
   MAT = {
     stone: S(0xE6E0D4), brick: S(0x9A5B40), panel: S(0xCDD1D6), pod: S(0x8E8A84), school: S(0xDCD3C2), white: S(0xF3F3F1, { roughness: .6 }),
     beige: S(0xE4D6BC), terra: S(0xA4553E), dark: S(0x4A4542),
-    slab: S(0xCFC9BE, { roughness: 1 }), glass: S(0x34465A, { roughness: .18, metalness: .55 }), frame: S(0x3B4048, { roughness: .5, metalness: .3 }),
+    slab: S(0xCFC9BE, { roughness: 1 }), glass: S(0x34465A, { roughness: .75, metalness: .05 }), frame: S(0x3B4048, { roughness: .5, metalness: .3 }),
     tree: S(0x6F9A5A, { flatShading: true }), trunk: S(0x5A4636), field: S(0x7FA36A, { roughness: 1 }), line: new THREE.MeshBasicMaterial({ color: 0xffffff }),
     path: SL(0xCDBFA8, { roughness: 1 }), play: S(0xC0704E, { roughness: 1 }),
     lawn: SL(0x86A965, { roughness: 1 }), pave: SL(0xD6D2CA, { roughness: 1 }), asphalt: SL(0x6C7076, { roughness: 1 }), curb: SL(0xEEECE7, { roughness: 1 }),
@@ -1560,7 +1569,7 @@ class Viewer {
     if (!HAS3D) { el.insertAdjacentHTML('beforeend', '<div class="nogl">Для 3D-просмотра нужен интернет и браузер с поддержкой WebGL</div>'); this.dead = true; return }
     const c = this.canvas = document.createElement('canvas'); el.prepend(c);
     try { this.r = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: this.o.preserve }) } catch (e) { el.insertAdjacentHTML('beforeend', '<div class="nogl">WebGL недоступен в этом браузере</div>'); this.dead = true; return }
-    const r = this.r; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.shadowMap.enabled = false; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding;
+    const r = this.r; r.setPixelRatio(1); r.shadowMap.enabled = false; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding;
     const s = this.scene = new THREE.Scene(); s.background = new THREE.Color(0xE9EDF1);
     s.add(new THREE.HemisphereLight(0xffffff, 0xa9b1bb, .85));
     const sun = this.sun = new THREE.DirectionalLight(0xfff3e2, .95); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.00015; sun.shadow.normalBias = .08; s.add(sun, sun.target);
@@ -1572,7 +1581,7 @@ class Viewer {
     }
     this.theta = .8; this.visible = true; this.anim = null;
     if ('IntersectionObserver' in window) new IntersectionObserver(e => { this.visible = e[0].isIntersecting; this.dirty = true }).observe(el);
-    const rs = () => { const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return; r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); this.dirty = true };
+    const rs = () => { const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return; r.setPixelRatio(granRenderScale(w,h,!this.o.interactive)); r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); this.dirty = true };
     if ('ResizeObserver' in window) new ResizeObserver(rs).observe(el); addEventListener('resize', rs); rs();
     let prev = performance.now();
     const loop = now => { requestAnimationFrame(loop); const dt = Math.min(50, now - prev); prev = now; if (!this.visible || (!this.p && !this.lv)) return; this.tick(dt); if (this.dirty) { this.dirty = false; r.render(s, this.cam) } };
@@ -1706,7 +1715,7 @@ let modalViewer = null;
 (function () {
   const list = $('#projList');
   list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="ov tr cap">${p.tag}</div><div class="prj-overlay">${p.facts.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div></div><div class="body"><dl class="nda"><div><dt>Адрес объекта</dt><dd>NDA</dd></div><div><dt>Застройщик</dt><dd>NDA</dd></div></dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
-  $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: true }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
+  $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: false }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
   list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openProject(+b.dataset.open) });
   const modal = $('#modal'); let lastFocus = null;
   function openProject(i) {
