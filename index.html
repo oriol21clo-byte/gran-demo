@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* GRAN v1.1 — согласованные точечные изменения */
-html{scroll-behavior:smooth;scroll-padding-top:95px}
+html{scroll-behavior:smooth;scroll-padding-top:var(--gran-header-height,64px)}
 #why-us{background:#fff}
 .why-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px;margin-top:36px}
 .why-metric{border-top:1px solid var(--line);padding-top:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
@@ -554,6 +554,79 @@ footer .legal a{text-decoration:underline;text-underline-offset:2px}
 @media(max-width:1100px){.why-panel{gap:18px 24px;grid-template-columns:1fr 1.6fr}#why-us .why-metric{padding-inline:14px}#why-us .why-metric strong{font-size:34px}}
 @media(max-width:760px){.why-panel{grid-template-columns:1fr;gap:24px;padding:24px 0}.why-heading h2,.why-heading>p{max-width:520px}#why-us .why-grid{grid-column:1}#why-us .why-foot{grid-column:1;padding-left:0}#why-us .why-metric:first-child{padding-left:0}#why-us .why-metric strong{font-size:32px}#why-us .why-metric strong small{font-size:12px}}
 @media(max-width:440px){.prj .body{gap:10px;padding:10px 12px;flex-wrap:wrap}.prj .nda{gap:12px;flex:1 1 auto}.prj .nda>div{flex-direction:column;align-items:flex-start;gap:2px}.prj .body>.btn{margin-left:auto}.prj .prj-overlay{right:8px;bottom:8px}.prj .prj-overlay>div{padding-inline:6px}#why-us .why-metric{padding-inline:10px}#why-us .why-metric strong{font-size:28px}#why-us .why-metric strong small{display:block;margin-top:4px}#why-us .why-metric>span{font-size:10px}#why-us .why-grid{align-items:start}}
+
+/* v1.3: точное позиционирование разделов и вертикальные характеристики */
+html{scroll-padding-top:var(--gran-header-height,64px)}
+.prj .prj-overlay{top:50%;bottom:auto;right:14px;left:auto;transform:translateY(-50%);flex-direction:column;align-items:flex-end;gap:12px;width:auto}
+.prj .prj-overlay>div{padding:0;align-items:flex-end;background:transparent;border:0;box-shadow:none;text-align:right;gap:3px}
+.prj .prj-overlay>div+div{border:0}
+.prj .prj-overlay strong{font-size:12px;line-height:1.35}
+.prj .prj-overlay span{font-size:10px;line-height:1.4}
+@media(max-width:440px){.prj .prj-overlay{right:10px;bottom:auto;top:50%;gap:10px}.prj .prj-overlay>div{padding:0}.prj .prj-overlay strong{font-size:11px}.prj .prj-overlay span{font-size:10px}}
+
+/* GRAN v1.4 — выбранные варианты: компактная сетка / архитектурная сетка / панель договора */
+#why-us .why-panel{display:block;padding:30px 0;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+#why-us .why-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;margin:12px 0 30px}
+#why-us .why-heading h2{max-width:none;margin:0;font-size:clamp(26px,2.8vw,36px)}
+#why-us .why-heading>p{margin:0;max-width:320px;font-size:14px;line-height:1.6}
+#why-us .why-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0}
+#why-us .why-metric{padding:0 28px;gap:14px;border:0}
+#why-us .why-metric:first-child{padding-left:0}
+#why-us .why-metric+.why-metric{border-left:1px solid var(--line)}
+#why-us .why-metric>.why-index{font:400 11px/1.5 var(--fm);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#why-us .why-metric strong{font-size:clamp(36px,4vw,52px)}
+#why-us .why-metric>span:not(.why-index){font-size:14px;line-height:1.6}
+#why-us .why-foot{margin:28px 0 0;padding:0;font-size:11px}
+.contract-ribbon{width:100%;padding:20px 0}
+.contract-ribbon-panel{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:28px 0;margin:28px 0 22px;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.contract-type{display:inline-block;font:500 11px/1.5 var(--fm);letter-spacing:.08em;padding:5px 9px;border:1px solid var(--line2);border-radius:4px;color:var(--muted)}
+.contract-ribbon-panel h3{font-size:28px;margin:14px 0 8px}
+.contract-ribbon-panel p{font-size:15px;color:var(--ink2)}
+.contract-ribbon-panel>.btn{flex-shrink:0}
+.contract-ribbon-terms{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:26px;font-size:14px}
+.contract-ribbon-terms>span+span{border-left:1px solid var(--line);padding-left:20px}
+/* Each desktop section occupies at least the usable screen; content may grow instead of being clipped. */
+@media(min-width:1100px) and (min-height:700px){
+#models,#projects,#why-us,#calc,#process,#forms,#norms,#faq{min-height:calc(100svh - var(--gran-header-height,64px));padding:24px 0;display:flex;align-items:center}
+#models>.wrap,#projects>.wrap,#why-us>.wrap,#calc>.wrap,#process>.wrap,#forms>.wrap,#norms>.wrap,#faq>.wrap{width:100%}
+#models h2,#projects h2,#calc h2,#process h2,#norms h2,#faq h2{font-size:30px;margin:8px 0 10px}
+#models .lead,#projects .lead,#calc .lead{font-size:14px;line-height:1.5;max-width:850px}
+#projects .projects{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px}
+#projects .prj .stage{height:clamp(150px,calc((100svh - 310px)/2),280px)}
+#projects .prj .body{padding:9px 14px;min-height:44px}
+#projects .prj .stage .cap{font-size:11px;padding:4px 8px}
+#models .models{gap:14px;margin-top:22px}
+#models .mcard{padding:18px;gap:10px}
+#models .mcard p,#models .mcard li,#models .mcard dl{font-size:13px;line-height:1.5}
+#models .mcard .hd{padding-bottom:10px}
+#models .mcard dl{padding-top:10px;gap:5px 10px}
+#calc .calc2{gap:12px;margin-top:18px;grid-template-columns:minmax(310px,350px) minmax(0,1fr)}
+#calc .panel{padding:16px}
+#calc .field{margin-bottom:10px}
+#calc .cgrp{padding-top:10px;margin-top:8px}
+#calc .cgrp-h{margin-bottom:8px}
+#calc .lbl,#calc .field>label{margin-bottom:6px}
+#calc .mcheck{padding:7px 9px}#calc .mcheck small{font-size:11px}
+#calc .seg button{height:32px;font-size:13px}
+#calc .fine{font-size:11px;line-height:1.45}
+#calc .calcR{grid-template-rows:minmax(200px,1fr) auto;gap:10px}
+#calc .stage{min-height:200px;height:100%}
+#calc .res2{padding:14px 18px;gap:8px}
+#calc .res2 .tot{font-size:32px}
+#calc .kpbox{padding:12px 16px;gap:18px}
+#calc .kph{margin-bottom:8px}
+#calc .inp{height:34px;font-size:13px}
+#calc .kpnote{font-size:12px;gap:6px}
+#process .steps{margin-top:22px}
+#process .step{padding:18px}
+#norms .norms{margin-top:24px}
+#norms .tl-item{padding:13px 18px;gap:16px}
+#norms .tl-item p{font-size:13px;line-height:1.5}
+#faq .faq{margin-top:22px}
+#faq .faq summary{padding-block:15px}
+}
+@media(max-width:1099px),(max-height:699px){#projects .projects{gap:14px}#projects .prj .stage{height:clamp(220px,35vw,320px)}}
+@media(max-width:760px){#why-us .why-heading{display:block;margin-bottom:24px}#why-us .why-heading>p{margin-top:16px}#why-us .why-grid{grid-template-columns:1fr;gap:0}#why-us .why-metric,#why-us .why-metric:first-child{padding:20px 0}#why-us .why-metric+.why-metric{border-left:0;border-top:1px solid var(--line)}#why-us .why-metric strong{font-size:40px}#why-us .why-metric>span:not(.why-index){font-size:14px}.contract-ribbon-panel{align-items:flex-start;flex-direction:column;padding:24px 0}.contract-ribbon-terms{grid-template-columns:1fr 1fr;gap:18px;font-size:13px}.contract-ribbon-terms>span+span{padding:0;border:0}.contract-ribbon h2{font-size:28px}}
 </style>
 </head>
 <body>
@@ -661,17 +734,10 @@ footer .legal a{text-decoration:underline;text-underline-offset:2px}
   </div>
 </section>
 
-<section id="why-us" aria-labelledby="why-title">
- <div class="wrap"><div class="why-panel">
-  <div class="why-heading"><div class="label">Команда / Опыт</div><h2 id="why-title">Почему выбирают «ГРАНЬ»</h2><p>За каждым проектом — опыт специалистов в подготовке и согласовании цифровых моделей для АГР.</p></div>
-  <div class="why-grid">
-   <div class="why-metric"><strong>3<span>+</span></strong><span>года опыта<br>в сфере АГР</span></div>
-   <div class="why-metric"><strong>3,5 <small>млн м²</small></strong><span>согласованных<br>площадей в ДГП</span></div>
-   <div class="why-metric"><strong>20</strong><span>IFC-моделей, включая<br>знаковые объекты Москвы</span></div>
-  </div>
-  <p class="why-foot">Совокупный опыт специалистов команды.</p>
- </div></div>
-</section>
+<section id="why-us" aria-labelledby="why-title"><div class="wrap"><div class="why-panel">
+<div class="label">Команда / Опыт</div><div class="why-heading"><h2 id="why-title">Почему выбирают<br>«ГРАНЬ»</h2><p>Опыт, который помогает<br>проходить согласование.</p></div>
+<div class="why-grid"><div class="why-metric"><span class="why-index">01 / Практика</span><strong>3<span>+</span></strong><span>года опыта специалистов<br>в сфере АГР</span></div><div class="why-metric"><span class="why-index">02 / Масштаб</span><strong>3,5 <small>млн м²</small></strong><span>согласованных<br>площадей в ДГП</span></div><div class="why-metric"><span class="why-index">03 / Экспертиза</span><strong>20</strong><span>IFC-моделей, включая<br>знаковые объекты Москвы</span></div></div>
+<p class="why-foot">Совокупный опыт специалистов команды.</p></div></div></section>
 
 <section id="calc">
   <div class="wrap">
@@ -743,21 +809,16 @@ footer .legal a{text-decoration:underline;text-underline-offset:2px}
       <div><b>0 ₽</b><span>за исправление замечаний ДГП по нашей вине, не дольше 3 р.д.</span></div>
       <div><b>Цена</b><span>фиксируется в договоре и не растёт при тех же исходных</span></div>
       <div><b>50 / 40 / 10</b><span>оплата этапами, договор по ЭДО</span></div>
-      <div><b>Буклет</b><span>достаточно для старта, плюс адрес и СПОЗУ</span></div>
+      <div><b>Буклет</b><span>для начала работы нужны буклет, адрес объекта и СПОЗУ</span></div>
     </div>
   </div>
 </section>
 
-<section id="forms">
- <div class="wrap">
-  <div class="label">Документы</div><h2>Типовой договор</h2>
-  <p class="lead">Условия сотрудничества, состав работ и порядок согласования фиксируем до начала проекта.</p>
-  <div class="contract-v11">
-   <div class="contract-copy"><span class="contract-kicker">ДОКУМЕНТАЦИЯ / ГРАНЬ</span><h3>Прозрачные условия работы</h3><p>Ознакомьтесь с типовым договором на разработку цифровых моделей для АГР. Индивидуальные условия согласуем до подписания.</p><div class="contract-terms"><span>01 / Состав моделей и ТЗ</span><span>02 / Этапы и сроки</span><span>03 / Оплата 50 / 40 / 10 %</span><span>04 / Работа с замечаниями</span></div></div>
-   <div class="contract-download"><span class="contract-file-icon">▤</span><strong>Типовой договор</strong><span>DOCX · предварительный образец</span><a class="btn btn-white" href="files/GRAN_Typovoy_dogovor.docx" download="ГРАНЬ_Типовой_договор.docx">Скачать договор ↓</a></div>
-  </div>
- </div>
-</section>
+<section id="forms"><div class="wrap"><div class="contract-ribbon">
+<div class="label">Документы / Условия сотрудничества</div><h2>Договор без лишних вопросов.</h2><p class="lead">Ознакомьтесь с условиями до начала проекта.</p>
+<div class="contract-ribbon-panel"><div><span class="contract-type">DOCX</span><h3>Типовой договор</h3><p>Разработка цифровых моделей для АГР</p></div><a class="btn btn-primary" href="files/GRAN_Typovoy_dogovor.docx" download="ГРАНЬ_Типовой_договор.docx">Скачать образец <span aria-hidden="true">↓</span></a></div>
+<div class="contract-ribbon-terms"><span>Состав работ и ТЗ</span><span>Этапы и сроки</span><span>Оплата 50 / 40 / 10 %</span><span>Замечания ДГП</span></div><p class="fine">Предварительный образец. Индивидуальные условия фиксируем перед подписанием.</p>
+</div></div></section>
 
 <section id="norms">
   <div class="wrap">
@@ -1808,6 +1869,55 @@ $('#kpBtn').addEventListener('click', () => makeKP(false));
   if (!ck) $('#cookie').hidden = false;
   const set = v => { try { localStorage.setItem('gran_cookie', v) } catch (e) { } $('#cookie').hidden = true; /* при v === 'all' подключить Яндекс Метрику */ };
   $('#ckAll').onclick = () => set('all'); $('#ckNeed').onclick = () => set('need');
+})();
+</script>
+
+<script>
+/* Independent of Three.js: menu navigation stays functional if a CDN is unavailable. */
+(function () {
+  const header = document.querySelector('header.top');
+  const root = document.documentElement;
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const updateHeader = () => {
+    const rect = header ? header.getBoundingClientRect() : { height: 0, top: 0 };
+    root.style.setProperty('--gran-header-height', Math.ceil(rect.height + Math.max(0, rect.top)) + 'px');
+  };
+  function alignSection(hash, animate) {
+    if (!hash || hash === '#') return false;
+    let id;
+    try { id = decodeURIComponent(hash.slice(1)); } catch (_) { return false; }
+    const target = document.getElementById(id);
+    if (!target) return false;
+    updateHeader();
+    // Align the actual content, excluding the section's inter-section padding.
+    const padding = target.tagName === 'SECTION' ? parseFloat(getComputedStyle(target).paddingTop) || 0 : 0;
+    const top = target.getBoundingClientRect().top + window.scrollY + padding;
+    const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+    const y = Math.max(0, top - headerBottom - 12);
+    window.scrollTo({ top: y, behavior: animate && !reducedMotion() ? 'smooth' : 'instant' });
+    return true;
+  }
+  document.addEventListener('click', event => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target instanceof Element ? event.target.closest('a[href^="#"]') : null;
+    if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+    const hash = link.getAttribute('href');
+    if (!hash || hash === '#' || !document.getElementById(hash.slice(1))) return;
+    event.preventDefault();
+    if (location.hash !== hash) history.pushState(null, '', hash);
+    alignSection(hash, true);
+  });
+  updateHeader();
+  if ('ResizeObserver' in window && header) new ResizeObserver(updateHeader).observe(header);
+  window.addEventListener('hashchange', () => alignSection(location.hash, false));
+  window.addEventListener('popstate', () => alignSection(location.hash, false));
+  window.addEventListener('load', () => {
+    updateHeader();
+    if (location.hash) {
+      alignSection(location.hash, false);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => alignSection(location.hash, false));
+    }
+  });
 })();
 </script>
 </body>
