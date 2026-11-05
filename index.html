@@ -587,7 +587,7 @@ html{scroll-padding-top:var(--gran-header-height,64px)}
 .contract-ribbon-terms>span+span{border-left:1px solid var(--line);padding-left:20px}
 /* Each desktop section occupies at least the usable screen; content may grow instead of being clipped. */
 @media(min-width:1100px) and (min-height:700px){
-#models,#projects,#why-us,#calc,#process,#forms,#norms,#faq{min-height:calc(100svh - var(--gran-header-height,64px));padding:24px 0;display:flex;align-items:center}
+#models,#projects,#why-us,#calc,#process,#forms,#norms,#faq{min-height:0;padding:32px 0;display:block}
 #models>.wrap,#projects>.wrap,#why-us>.wrap,#calc>.wrap,#process>.wrap,#forms>.wrap,#norms>.wrap,#faq>.wrap{width:100%}
 #models h2,#projects h2,#calc h2,#process h2,#norms h2,#faq h2{font-size:30px;margin:8px 0 10px}
 #models .lead,#projects .lead,#calc .lead{font-size:14px;line-height:1.5;max-width:850px}
@@ -627,6 +627,11 @@ html{scroll-padding-top:var(--gran-header-height,64px)}
 }
 @media(max-width:1099px),(max-height:699px){#projects .projects{gap:14px}#projects .prj .stage{height:clamp(220px,35vw,320px)}}
 @media(max-width:760px){#why-us .why-heading{display:block;margin-bottom:24px}#why-us .why-heading>p{margin-top:16px}#why-us .why-grid{grid-template-columns:1fr;gap:0}#why-us .why-metric,#why-us .why-metric:first-child{padding:20px 0}#why-us .why-metric+.why-metric{border-left:0;border-top:1px solid var(--line)}#why-us .why-metric strong{font-size:40px}#why-us .why-metric>span:not(.why-index){font-size:14px}.contract-ribbon-panel{align-items:flex-start;flex-direction:column;padding:24px 0}.contract-ribbon-terms{grid-template-columns:1fr 1fr;gap:18px;font-size:13px}.contract-ribbon-terms>span+span{padding:0;border:0}.contract-ribbon h2{font-size:28px}}
+
+/* v1.6 — natural document flow, no viewport-sized gaps */
+#models,#projects,#why-us,#calc,#process,#norms,#faq{min-height:0;height:auto;display:block;padding-top:36px;padding-bottom:12px}
+#why-us{padding-top:24px}
+@media(max-width:760px){#models,#projects,#calc,#process,#norms,#faq{padding-top:32px;padding-bottom:8px}}
 </style>
 </head>
 <body>
@@ -932,7 +937,7 @@ let setMode = () => {};
   let renderer;
   try{renderer=new THREE.WebGLRenderer({canvas,antialias:true});if(!renderer.getContext())throw 0}catch(e){$('#vstats').innerHTML='<div class="row"><span>WebGL недоступен. Показан статичный вид</span></div>';return}
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled=false; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputEncoding=THREE.sRGBEncoding;
   const BG=0xE9EDF1;
   const scene=new THREE.Scene(); scene.background=new THREE.Color(BG); scene.fog=new THREE.Fog(BG,220,420);
@@ -1013,7 +1018,7 @@ let setMode = () => {};
     const core=box(b.w-0.5,h,b.d-0.5,M(b.col),b.x,b.y0+h/2,b.z);core.castShadow=core.receiveShadow=true;gVPM.add(core);
     if(b.podium){
       [[0,1],[0,-1],[1,0],[-1,0]].forEach(([nx,nz])=>{const len=nx?b.d:b.w;const n=Math.floor(len/2.4);
-        for(let i=0;i<n;i++){const t=-len/2+1.2+i*(len-2.4)/(n-1);const px=b.x+(nx?nx*(b.w/2-.2):t),pz=b.z+(nz?nz*(b.d/2-.2):t);
+        for(let i=0;i<n;i++){const t=-len/2+1.2+i*(len-2.4)/(n-1);const px=b.x+(nx?nx*(b.w/2+.04):t),pz=b.z+(nz?nz*(b.d/2+.04):t);
           win.push([px,2.6,pz,nx?.12:2.0,4.0,nx?2.0:.12]);frmD.push([px,2.6,pz,nx?.08:2.3,4.3,nx?2.3:.08])}});
       band.push([b.x,6,b.z,b.w+.4,.5,b.d+.4]);
       gVPM.add(box(9,.3,3.4,frameD,b.x+4,4.9,b.z+b.d/2+1.6));
@@ -1022,7 +1027,7 @@ let setMode = () => {};
     for(let k=1;k<=b.f;k++) band.push([b.x,b.y0+k*FH-.1,b.z,b.w+.25,.28,b.d+.25]);
     const brick=b.id==='B', stone=b.id==='A';
     [[0,1],[0,-1],[1,0],[-1,0]].forEach(([nx,nz],fi)=>{
-      const len=nx?b.d:b.w; const bays=Math.max(2,Math.round(len/(stone?3.2:2.8))); const sp=len/bays; const off=(nx?b.w:b.d)/2-.2;
+      const len=nx?b.d:b.w; const bays=Math.max(2,Math.round(len/(stone?3.2:2.8))); const sp=len/bays; const off=(nx?b.w:b.d)/2+.04;
       for(let k=0;k<b.f;k++){const y=b.y0+k*FH+FH*.52;
         for(let i=0;i<bays;i++){const t=-len/2+sp/2+i*sp; const px=b.x+(nx?nx*off:t), pz=b.z+(nz?nz*off:t);
           const ww=sp*(brick?.45:.58);
@@ -1304,7 +1309,7 @@ function buildProject(spec) {
     const brick = [], bronze = [], dark = [];
     // фасады по четырём сторонам: окна и рамы
     [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([nx, nz], fi) => {
-      const L = nx ? b.d : b.w, bays = Math.max(2, Math.round(L / 3.2)), sp = L / bays, off = (nx ? b.w : b.d) / 2 - .15;
+      const L = nx ? b.d : b.w, bays = Math.max(2, Math.round(L / 3.2)), sp = L / bays, off = (nx ? b.w : b.d) / 2 + .04;
       for (let k = 0; k < b.f; k++) { const y = y0 + k * FH + FH * .52, oK = off + ((fac >= 2 && k === 1) || (fac < 2 && k === 0) ? .32 : 0);
         for (let i = 0; i < bays; i++) { const t = -L / 2 + sp / 2 + i * sp, px = b.x + (nx ? nx * oK : t), pz = b.z + (nz ? nz * oK : t);
           if (k === 0 && fac >= 2) continue;
@@ -1376,7 +1381,7 @@ function buildProject(spec) {
       if (fac >= 1) for (let k = 1; k <= b.f; k++) band.push([b.x, y0 + k * FH - .1, b.z, b.w + .2, .25, b.d + .2]);
       const wide = b.kind === 'school', brick = matName === 'brick' || matName === 'terra';
       [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([nx, nz], fi) => {
-        const L = nx ? b.d : b.w, bays = Math.max(2, Math.round(L / (wide ? 3.6 : 3))), sp = L / bays, off = (nx ? b.w : b.d) / 2 - .15;
+        const L = nx ? b.d : b.w, bays = Math.max(2, Math.round(L / (wide ? 3.6 : 3))), sp = L / bays, off = (nx ? b.w : b.d) / 2 + .04;
         for (let k = 0; k < b.f; k++) { const y = y0 + k * FH + FH * .52;
           for (let i = 0; i < bays; i++) { const t = -L / 2 + sp / 2 + i * sp, px = b.x + (nx ? nx * off : t), pz = b.z + (nz ? nz * off : t), ww = sp * (wide ? .72 : brick ? .42 : .5), wh = wide ? 1.9 : 1.6;
             win.push([px, y, pz, nx ? .1 : ww, wh, nx ? ww : .1]); (brick ? frmW : frmD).push([px, y, pz, nx ? .05 : ww + .2, wh + .2, nx ? ww + .2 : .05]);
@@ -1555,7 +1560,7 @@ class Viewer {
     if (!HAS3D) { el.insertAdjacentHTML('beforeend', '<div class="nogl">Для 3D-просмотра нужен интернет и браузер с поддержкой WebGL</div>'); this.dead = true; return }
     const c = this.canvas = document.createElement('canvas'); el.prepend(c);
     try { this.r = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: this.o.preserve }) } catch (e) { el.insertAdjacentHTML('beforeend', '<div class="nogl">WebGL недоступен в этом браузере</div>'); this.dead = true; return }
-    const r = this.r; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding;
+    const r = this.r; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.shadowMap.enabled = false; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding;
     const s = this.scene = new THREE.Scene(); s.background = new THREE.Color(0xE9EDF1);
     s.add(new THREE.HemisphereLight(0xffffff, 0xa9b1bb, .85));
     const sun = this.sun = new THREE.DirectionalLight(0xfff3e2, .95); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.00015; sun.shadow.normalBias = .08; s.add(sun, sun.target);
