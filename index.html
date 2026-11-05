@@ -638,7 +638,7 @@ html{scroll-padding-top:var(--gran-header-height,64px)}
       <span>ГРАНЬ<small>цифровые модели для АГР</small></span>
     </a>
     <nav class="main" aria-label="Разделы">
-      <a href="#models">Модели</a><a href="#projects">Проекты</a><a href="#calc">Стоимость</a><a href="#forms">Документы</a><a href="#norms">Требования</a><a href="#faq">Вопросы</a>
+      <a href="#models">Модели</a><a href="#projects">Проекты</a><a href="#calc">Стоимость</a><a href="#norms">Требования</a><a href="#faq">Вопросы</a>
     </nav>
         <a href="#lead" class="btn btn-primary btn-sm">Отправить буклет</a>
   </div>
@@ -814,11 +814,7 @@ html{scroll-padding-top:var(--gran-header-height,64px)}
   </div>
 </section>
 
-<section id="forms"><div class="wrap"><div class="contract-ribbon">
-<div class="label">Документы / Условия сотрудничества</div><h2>Договор без лишних вопросов.</h2><p class="lead">Ознакомьтесь с условиями до начала проекта.</p>
-<div class="contract-ribbon-panel"><div><span class="contract-type">DOCX</span><h3>Типовой договор</h3><p>Разработка цифровых моделей для АГР</p></div><a class="btn btn-primary" href="files/GRAN_Typovoy_dogovor.docx" download="ГРАНЬ_Типовой_договор.docx">Скачать образец <span aria-hidden="true">↓</span></a></div>
-<div class="contract-ribbon-terms"><span>Состав работ и ТЗ</span><span>Этапы и сроки</span><span>Оплата 50 / 40 / 10 %</span><span>Замечания ДГП</span></div><p class="fine">Предварительный образец. Индивидуальные условия фиксируем перед подписанием.</p>
-</div></div></section>
+
 
 <section id="norms">
   <div class="wrap">
@@ -948,13 +944,13 @@ let setMode = () => {};
 
   scene.add(new THREE.HemisphereLight(0xffffff,0xa9b1bb,0.85));
   const sun=new THREE.DirectionalLight(0xfff3e2,0.95); sun.position.set(80,120,60); sun.castShadow=true;
-  sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera,{left:-90,right:90,top:90,bottom:-90,near:10,far:360}); sun.shadow.bias=-0.0004; scene.add(sun);
+  sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera,{left:-90,right:90,top:90,bottom:-90,near:10,far:360}); sun.shadow.bias=-0.00015; sun.shadow.normalBias=0.08; scene.add(sun);
 
   const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.85},o));
   const box=(w,h,d,mat,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);return m};
   const plane=(w,d,mat,x,z,y)=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat);p.rotation.x=-Math.PI/2;p.position.set(x,y,z);p.receiveShadow=true;return p};
   const unit=new THREE.BoxGeometry(1,1,1), dummy=new THREE.Object3D();
-  function inst(list,mat,parent,shadow){const im=new THREE.InstancedMesh(unit,mat,list.length);list.forEach((a,i)=>{dummy.position.set(a[0],a[1],a[2]);dummy.scale.set(a[3],a[4],a[5]);dummy.updateMatrix();im.setMatrixAt(i,dummy.matrix)});im.castShadow=!!shadow;im.receiveShadow=true;parent.add(im);return im}
+  function inst(list,mat,parent,shadow){const im=new THREE.InstancedMesh(unit,mat,list.length);list.forEach((a,i)=>{dummy.position.set(a[0],a[1],a[2]);dummy.scale.set(a[3],a[4],a[5]);dummy.updateMatrix();im.setMatrixAt(i,dummy.matrix)});im.castShadow=!!shadow;im.receiveShadow=false;parent.add(im);return im}
 
   const FH=3;
   const B=[
@@ -1222,7 +1218,7 @@ function buildProject(spec) {
   const trees = []; let guard = 0; const want = LAND ? 0 : spec.trees || 0;
   while (trees.length < want && guard++ < want * 60) { const x = (rnd() - .5) * (SW - 6), z = (rnd() - .5) * (SD - 6); if (free(x, z, 3) && trees.every(t => Math.hypot(t.x - x, t.z - z) > 4.2)) trees.push({ x, z, s: .75 + rnd() * .5 }) }
   const unit = new THREE.BoxGeometry(1, 1, 1), dummy = new THREE.Object3D(); geo.push(unit);
-  const inst = (list, m, parent, shadow) => { if (!list.length) return; const im = new THREE.InstancedMesh(unit, m, list.length); list.forEach((a, i) => { dummy.position.set(a[0], a[1], a[2]); dummy.scale.set(a[3], a[4], a[5]); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix) }); im.castShadow = !!shadow; im.receiveShadow = true; parent.add(im) };
+  const inst = (list, m, parent, shadow) => { if (!list.length) return; const im = new THREE.InstancedMesh(unit, m, list.length); list.forEach((a, i) => { dummy.position.set(a[0], a[1], a[2]); dummy.scale.set(a[3], a[4], a[5]); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix) }); im.castShadow = !!shadow; im.receiveShadow = false; parent.add(im) };
   const crownG = new THREE.IcosahedronGeometry(2, 1), crownLow = new THREE.IcosahedronGeometry(2, 0), trunkG = new THREE.CylinderGeometry(.18, .26, 2.4, 6); geo.push(crownG, crownLow, trunkG);
   trees.forEach(t => {
     const tr = new THREE.Mesh(trunkG, M.trunk); tr.position.set(t.x, 1.2 * t.s, t.z); tr.scale.setScalar(t.s); g.vpm.add(tr);
@@ -1559,12 +1555,12 @@ class Viewer {
     if (!HAS3D) { el.insertAdjacentHTML('beforeend', '<div class="nogl">Для 3D-просмотра нужен интернет и браузер с поддержкой WebGL</div>'); this.dead = true; return }
     const c = this.canvas = document.createElement('canvas'); el.prepend(c);
     try { this.r = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: this.o.preserve }) } catch (e) { el.insertAdjacentHTML('beforeend', '<div class="nogl">WebGL недоступен в этом браузере</div>'); this.dead = true; return }
-    const r = this.r; r.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding;
+    const r = this.r; r.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding;
     const s = this.scene = new THREE.Scene(); s.background = new THREE.Color(0xE9EDF1);
     s.add(new THREE.HemisphereLight(0xffffff, 0xa9b1bb, .85));
-    const sun = this.sun = new THREE.DirectionalLight(0xfff3e2, .95); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0004; s.add(sun, sun.target);
+    const sun = this.sun = new THREE.DirectionalLight(0xfff3e2, .95); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.00015; sun.shadow.normalBias = .08; s.add(sun, sun.target);
     const sc = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: .14 })); sc.rotation.x = -Math.PI / 2; sc.position.y = -1.25; sc.receiveShadow = true; s.add(sc);
-    this.cam = new THREE.PerspectiveCamera(32, 1, .5, 6000);
+    this.cam = new THREE.PerspectiveCamera(32, 1, 1, 6000);
     if (this.o.interactive && THREE.OrbitControls) {
       const k = this.ctl = new THREE.OrbitControls(this.cam, c); k.enableDamping = true; k.dampingFactor = .08; k.enableZoom = this.o.zoom; k.maxPolarAngle = Math.PI * .97; k.autoRotate = this.o.auto; k.autoRotateSpeed = .7;
       k.addEventListener('start', () => { k.autoRotate = false; clearTimeout(this._t); if (this.o.auto) this._t = setTimeout(() => k.autoRotate = true, 7000) });
