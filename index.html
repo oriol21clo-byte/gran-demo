@@ -33,7 +33,7 @@ html{scroll-behavior:smooth;scroll-padding-top:var(--gran-header-height,64px)}
 @media(max-width:640px){.why-grid{grid-template-columns:1fr;gap:22px}.why-metric strong{font-size:42px}.contract-v11{grid-template-columns:1fr}.contract-terms{grid-template-columns:1fr}.kpbox{grid-template-columns:1fr}.prj-overlay{gap:4px}.prj-overlay>div{padding:5px 7px}.prj-overlay strong{font-size:12px}}
 </style></head><body>
 <!doctype html>
-<html lang="ru"><!-- GRAN 1.7: supersampled facade rendering -->
+<html lang="ru"><!-- GRAN 1.8: smooth rotating supersampled models -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -635,6 +635,10 @@ html{scroll-padding-top:var(--gran-header-height,64px)}
 
 /* v1.7: smooth reduction of supersampled canvases; no pixelated scaling */
 .viewer canvas,.stage canvas{image-rendering:auto}
+
+/* v1.8: one continuous architectural grid across the main page */
+body{background-color:var(--paper);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:40px 40px;background-position:0 0}
+.hero,#models,#projects,#why-us,#calc,#process,#norms,#faq{background:transparent}
 </style>
 </head>
 <body>
@@ -930,8 +934,8 @@ const MODE_DESC = {
 };
 // Supersample dense facade grids before browser downsampling, including DPR=1 displays.
 function granRenderScale(w, h, preview) {
-  const desired = preview ? 4 : 3;
-  const budget = 3000000;
+  const desired = 4;
+  const budget = 4000000;
   return Math.max(1, Math.min(desired, Math.sqrt(budget / Math.max(1, w * h))));
 }
 let setMode = () => {};
@@ -947,7 +951,7 @@ let setMode = () => {};
   try{renderer=new THREE.WebGLRenderer({canvas,antialias:true});if(!renderer.getContext())throw 0}catch(e){$('#vstats').innerHTML='<div class="row"><span>WebGL недоступен. Показан статичный вид</span></div>';return}
   renderer.setPixelRatio(1);
   renderer.shadowMap.enabled=false; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;
   const BG=0xE9EDF1;
   const scene=new THREE.Scene(); scene.background=new THREE.Color(BG); scene.fog=new THREE.Fog(BG,220,420);
   const camera=new THREE.PerspectiveCamera(32,1,1,1200);
@@ -1145,8 +1149,8 @@ let setMode = () => {};
   let prev=performance.now(), frames=0;
   (function loop(now){requestAnimationFrame(loop);const dt=Math.min(50,now-prev);prev=now;
     if(!visible&&frames>5)return;
-    if(!drag&&now-lastAct>2500)theta+=dt*.00007;
-    radius+=(radiusT-radius)*.12;
+    if(!drag&&now-lastAct>2500)theta+=dt*.000055;
+    radius+=(radiusT-radius)*(1-Math.exp(-dt/140));
     if(growG&&growT<1){growT=Math.min(1,growT+dt/650);growG.scale.y=Math.max(.001,1-Math.pow(1-growT,3))}
     updateCam();renderer.render(scene,camera);
     if(++frames===2)wrap.classList.add('live');
@@ -1299,7 +1303,7 @@ function buildProject(spec) {
   // Круглая (овальная) башня
   function roundTower(b, y0, h, top) {
     const r = b.w / 2, k = b.d / b.w, cache = {};
-    const cg = (rr, hh) => { const key = rr + '_' + hh; if (!cache[key]) { const G = new THREE.CylinderGeometry(rr, rr, hh, 48); G.scale(1, 1, k); geo.push(G); cache[key] = G } return cache[key] };
+    const cg = (rr, hh) => { const key = rr + '_' + hh; if (!cache[key]) { const G = new THREE.CylinderGeometry(rr, rr, hh, 96); G.scale(1, 1, k); geo.push(G); cache[key] = G } return cache[key] };
     const mesh = (G, m, y) => { const o = new THREE.Mesh(G, m); o.position.set(b.x, y, b.z); return o };
     const n = mesh(cg(r, h), M.npm, y0 + h / 2); n.castShadow = n.receiveShadow = true; g.npm.add(n, edges(n, M.npmEdge, 20));
     const sm = bim ? M.cimGhost : M.cim, se = bim ? M.cimGhostEdge : M.cimEdge;
@@ -1569,14 +1573,14 @@ class Viewer {
     if (!HAS3D) { el.insertAdjacentHTML('beforeend', '<div class="nogl">Для 3D-просмотра нужен интернет и браузер с поддержкой WebGL</div>'); this.dead = true; return }
     const c = this.canvas = document.createElement('canvas'); el.prepend(c);
     try { this.r = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: this.o.preserve }) } catch (e) { el.insertAdjacentHTML('beforeend', '<div class="nogl">WebGL недоступен в этом браузере</div>'); this.dead = true; return }
-    const r = this.r; r.setPixelRatio(1); r.shadowMap.enabled = false; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding;
+    const r = this.r; r.setPixelRatio(1); r.shadowMap.enabled = false; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1;
     const s = this.scene = new THREE.Scene(); s.background = new THREE.Color(0xE9EDF1);
     s.add(new THREE.HemisphereLight(0xffffff, 0xa9b1bb, .85));
     const sun = this.sun = new THREE.DirectionalLight(0xfff3e2, .95); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.00015; sun.shadow.normalBias = .08; s.add(sun, sun.target);
     const sc = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: .14 })); sc.rotation.x = -Math.PI / 2; sc.position.y = -1.25; sc.receiveShadow = true; s.add(sc);
     this.cam = new THREE.PerspectiveCamera(32, 1, 1, 6000);
     if (this.o.interactive && THREE.OrbitControls) {
-      const k = this.ctl = new THREE.OrbitControls(this.cam, c); k.enableDamping = true; k.dampingFactor = .08; k.enableZoom = this.o.zoom; k.maxPolarAngle = Math.PI * .97; k.autoRotate = this.o.auto; k.autoRotateSpeed = .7;
+      const k = this.ctl = new THREE.OrbitControls(this.cam, c); k.enableDamping = true; k.dampingFactor = .08; k.enableZoom = this.o.zoom; k.maxPolarAngle = Math.PI * .97; k.autoRotate = this.o.auto; k.autoRotateSpeed = .35;
       k.addEventListener('start', () => { k.autoRotate = false; clearTimeout(this._t); if (this.o.auto) this._t = setTimeout(() => k.autoRotate = true, 7000) });
     }
     this.theta = .8; this.visible = true; this.anim = null;
@@ -1611,8 +1615,8 @@ class Viewer {
   tick(dt) {
     if (this.lv && this.lv.grp.visible) this.tickLive(dt);
     if (this.anim) { const a = this.anim; a.t = Math.min(1, a.t + dt / 650); const e = 1 - Math.pow(1 - a.t, 3), L = i => a.from[i] + (a.to[i] - a.from[i]) * e; this.place(L(0), L(1), L(2)); if (a.t >= 1) this.anim = null }
-    else if (this.ctl) { if (this.ctl.update()) this.dirty = true }
-    else if (this.o.auto) { this.theta += dt * .00018; this.place(this.theta, 1.05, this.dist) }
+    else if (this.ctl) { this.ctl.autoRotateSpeed = .35 * dt / (1000 / 60); this.ctl.dampingFactor = 1 - Math.exp(-dt / 180); if (this.ctl.update()) this.dirty = true }
+    else if (this.o.auto) { this.theta += dt * .000055; this.place(this.theta, 1.05, this.dist) }
   }
   setMode(m) { this.mode = m; this.dirty = true; if (this.p) for (const k in this.p.g) this.p.g[k].visible = !(this.lv && this.lv.grp.visible && !this.lv.reveal) && k === m }
   // Живой макет «как конструктор»: пока двигают площадь, этажи-блоки на лету падают сверху и встают друг на друга
@@ -1715,7 +1719,7 @@ let modalViewer = null;
 (function () {
   const list = $('#projList');
   list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="ov tr cap">${p.tag}</div><div class="prj-overlay">${p.facts.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div></div><div class="body"><dl class="nda"><div><dt>Адрес объекта</dt><dd>NDA</dd></div><div><dt>Застройщик</dt><dd>NDA</dd></div></dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
-  $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: false }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
+  $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: true }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
   list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openProject(+b.dataset.open) });
   const modal = $('#modal'); let lastFocus = null;
   function openProject(i) {
@@ -1733,7 +1737,7 @@ let modalViewer = null;
 /* ===================== КАЛЬКУЛЯТОР + ПРЕВЬЮ ===================== */
 let calcViewer, lastCalc;
 (function () {
-  const cv = calcViewer = new Viewer($('#calcStage'), { interactive: !isTouch, zoom: false, auto: false, preserve: true });
+  const cv = calcViewer = new Viewer($('#calcStage'), { interactive: !isTouch, zoom: false, auto: true, preserve: true });
   const modes = bindModes($('#calcStage'), cv);
   const aR = $('#cAreaR'), aN = $('#cArea'), MIN = 200, MAX = 400000;
   const toA = v => { const a = MIN * Math.pow(MAX / MIN, v / 100); return a < 2000 ? Math.round(a / 50) * 50 : a < 20000 ? Math.round(a / 100) * 100 : Math.round(a / 1000) * 1000 };
