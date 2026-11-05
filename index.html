@@ -33,7 +33,7 @@ html{scroll-behavior:smooth;scroll-padding-top:var(--gran-header-height,64px)}
 @media(max-width:640px){.why-grid{grid-template-columns:1fr;gap:22px}.why-metric strong{font-size:42px}.contract-v11{grid-template-columns:1fr}.contract-terms{grid-template-columns:1fr}.kpbox{grid-template-columns:1fr}.prj-overlay{gap:4px}.prj-overlay>div{padding:5px 7px}.prj-overlay strong{font-size:12px}}
 </style></head><body>
 <!doctype html>
-<html lang="ru"><!-- GRAN 1.8: smooth rotating supersampled models -->
+<html lang="ru"><!-- GRAN 1.10: hero and projects grid; first project reference reconstruction -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -636,9 +636,10 @@ html{scroll-padding-top:var(--gran-header-height,64px)}
 /* v1.7: smooth reduction of supersampled canvases; no pixelated scaling */
 .viewer canvas,.stage canvas{image-rendering:auto}
 
-/* v1.8: one continuous architectural grid across the main page */
-body{background-color:var(--paper);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:40px 40px;background-position:0 0}
-.hero,#models,#projects,#why-us,#calc,#process,#norms,#faq{background:transparent}
+/* v1.10: same grid on hero and projects only */
+body{background:var(--paper)}
+#models,#why-us,#calc,#process,#norms,#faq{background:transparent}
+.hero,#projects{background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/40px 40px,var(--paper)}
 </style>
 </head>
 <body>
@@ -1221,7 +1222,111 @@ function mats() {
   };
   return MAT;
 }
+/* First project: six-volume reconstruction from supplied views, not a surveyed model.
+   Dimensions and floor counts below are visual estimates; no measured TEP is asserted. */
+function buildReferenceProject(spec) {
+  const M = mats(), root = new THREE.Group(), g = {npm:new THREE.Group(),vpm:new THREE.Group(),cim:new THREE.Group()}, geo=[];
+  root.add(g.npm,g.vpm,g.cim);
+  if (!M.reference) {
+    const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.92,metalness:0});
+    M.reference={white:mat(0xe4e5e1),grey:mat(0xaeb8ba),gold:mat(0xb59c60),red:mat(0x9c5845),glass:mat(0x67777f),roof:mat(0x626a6e),lawn:mat(0xa2b68c),pave:mat(0xd7dad7),play:mat(0xc69773),wood:mat(0xb3906d),tree:mat(0x9eb694),light:mat(0xf1f0e9)};
+  }
+  const R=M.reference, unit=new THREE.BoxGeometry(1,1,1), dummy=new THREE.Object3D();geo.push(unit);
+  const batches=new Map();
+  function block(parent,mat,x,y,z,w,h,d,angle=0){
+    let byMat=batches.get(parent);if(!byMat)batches.set(parent,byMat=new Map());
+    if(!byMat.has(mat))byMat.set(mat,[]);byMat.get(mat).push([x,y,z,w,h,d,angle]);
+  }
+  function shape(w,d,r){
+    const s=new THREE.Shape(),x=-w/2,z=-d/2;
+    s.moveTo(x+r,z);s.lineTo(x+w-r,z);s.quadraticCurveTo(x+w,z,x+w,z+r);s.lineTo(x+w,z+d-r);s.quadraticCurveTo(x+w,z+d,x+w-r,z+d);s.lineTo(x+r,z+d);s.quadraticCurveTo(x,z+d,x,z+d-r);s.lineTo(x,z+r);s.quadraticCurveTo(x,z,x+r,z);return s;
+  }
+  function volume(parent,mat,x,y,z,w,h,d,r=0){
+    if(!r){block(parent,mat,x,y+h/2,z,w,h,d);return;}
+    const G=new THREE.ExtrudeGeometry(shape(w,d,r),{depth:h,bevelEnabled:false,curveSegments:12});G.rotateX(-Math.PI/2);geo.push(G);
+    const mesh=new THREE.Mesh(G,mat);mesh.position.set(x,y,z);parent.add(mesh);
+  }
+  function flat(parent,mat,points,y){
+    const s=new THREE.Shape();points.forEach(([x,z],i)=>i?s.lineTo(x,-z):s.moveTo(x,-z));s.closePath();
+    const G=new THREE.ShapeGeometry(s,16);G.rotateX(-Math.PI/2);geo.push(G);const m=new THREE.Mesh(G,mat);m.position.y=y;parent.add(m);
+  }
+  function ribbon(points,width,mat,y){
+    const c=new THREE.CatmullRomCurve3(points.map(([x,z])=>new THREE.Vector3(x,y,z))),p=c.getPoints(90),a=[],b=[];
+    p.forEach((v,i)=>{const v0=p[Math.max(0,i-1)],v1=p[Math.min(p.length-1,i+1)],dx=v1.x-v0.x,dz=v1.z-v0.z,L=Math.hypot(dx,dz)||1;a.push([v.x-dz/L*width/2,v.z+dx/L*width/2]);b.push([v.x+dz/L*width/2,v.z-dx/L*width/2]);});flat(g.vpm,mat,a.concat(b.reverse()),y);
+  }
+  block(root,M.slab,0,-.55,2,132,1.1,122);
+  block(g.vpm,R.pave,0,.035,2,131,.07,121);
+  block(g.npm,M.npm,0,.035,2,131,.07,121);
+  block(g.cim,M.cimSite,0,.06,2,131,.08,121);
+  // Two courtyard lawns and the linear public garden on the street side.
+  const lawns=[ [[-30,-15],[-7,-15],[-5,0],[-20,19],[-29,20]], [[8,-14],[29,-14],[30,26],[15,27],[2,10]], [[-62,-56],[62,-56],[58,-44],[-60,-44]] ];
+  lawns.forEach(p=>flat(g.vpm,R.lawn,p,.085));
+  ribbon([[-23,44],[-22,23],[-8,9],[1,-6],[-6,-25],[-15,-40]],4.4,R.light,.12);
+  ribbon([[34,38],[29,23],[15,12],[3,0],[-1,-20],[-2,-40]],3.5,R.light,.14);
+  ribbon([[-60,-50],[-26,-49],[0,-51],[25,-48],[60,-50]],2.6,R.light,.13);
+  ribbon([[-31,4],[-16,7],[0,7],[18,3],[31,-5]],2.2,R.pave,.16);
+  // Low two-storey podium wings stay outside the open courtyard.
+  const podiums=[[-16,-32,55,22],[43,-22,22,46],[-40,16,20,66],[27,34,29,20]];
+  function facade(x,z,w,d,y0,f,mat,kind){
+    const FH=3.1,h=f*FH;
+    [[0,1],[0,-1],[1,0],[-1,0]].forEach(([nx,nz])=>{
+      const L=nx?d:w,half=(nx?w:d)/2,margin=kind==='grey'?2.3:1.2,n=Math.max(2,Math.round((L-margin*2)/3.15)),sp=(L-margin*2)/n;
+      for(let k=0;k<f;k++)for(let j=0;j<n;j++){
+        const t=-L/2+margin+sp*(j+.5),off=half+.07,px=x+(nx?nx*off:t),pz=z+(nz?nz*off:t),wy=y0+k*FH+FH*.52;
+        const ww=sp*(kind==='gold'||kind==='red'?.69:.49),wh=kind==='pod'?2.45:1.98;
+        // The solid frame ends behind the glass: no coincident facade layers.
+        block(g.vpm,R.roof,px,wy,pz,nx?.10:ww+.13,wh+.13,nx?ww+.13:.10);
+        block(g.vpm,R.glass,px+nx*.075,wy,pz+nz*.075,nx?.055:ww,wh,nx?ww:.055);
+      }
+      if(kind==='gold'||kind==='red'){
+        for(let k=0;k<=f;k++)block(g.vpm,mat,x+nx*(half+.24),y0+k*FH,z+nz*(half+.24),nx?.5:w+.55,.21,nx?d+.55:.5);
+        for(let j=0;j<=n;j++){const t=-L/2+margin+sp*j;block(g.vpm,mat,x+(nx?nx*(half+.25):t),y0+h/2,z+(nz?nz*(half+.25):t),nx?.44:.22,h,nx?.22:.44);}
+      }
+    });
+  }
+  podiums.forEach(([x,z,w,d])=>{volume(g.vpm,R.white,x,0,z,w,6.2,d);volume(g.npm,M.npm,x,0,z,w,6.2,d);volume(g.cim,M.cim,x,0,z,w,6.2,d);facade(x,z,w,d,0,2,R.white,'pod');block(g.vpm,R.roof,x,6.24,z,w-1,.08,d-1);});
+  const towers=spec.buildings;
+  towers.forEach(b=>{
+    const mat=R[b.finish],segments=b.tiers||[{w:b.w,d:b.d,f:b.f,x:0,z:0}];let y=6.2;
+    segments.forEach(t=>{
+      const x=b.x+(t.x||0),z=b.z+(t.z||0),h=t.f*3.1,r=b.finish==='grey'?1.65:0;
+      volume(g.vpm,mat,x,y,z,t.w,h,t.d,r);volume(g.npm,M.npm,x,y,z,t.w,h,t.d,r);
+      for(let k=0;k<t.f;k++)volume(g.cim,M.cim,x,y+k*3.1,z,t.w,2.88,t.d,r);
+      facade(x,z,t.w,t.d,y,t.f,mat,b.finish);
+      // Roof inset and perimeter parapet: a dark roof never overlays window faces.
+      volume(g.vpm,R.roof,x,y+h+.025,z,t.w-.8,.12,t.d-.8,Math.max(0,r-.4));
+      const bars=[[0,t.d/2-.12,t.w,.24],[0,-t.d/2+.12,t.w,.24],[t.w/2-.12,0,.24,t.d],[-t.w/2+.12,0,.24,t.d]];
+      if(!r)bars.forEach(([dx,dz,w,d])=>block(g.vpm,mat,x+dx,y+h+.4,z+dz,w,.8,d));
+      y+=h;
+    });
+    block(g.vpm,R.roof,b.x,y+.7,b.z,b.w*.26,1.3,b.d*.25);
+  });
+  // Colonnade/pergola through the north courtyard, visible in the reference views.
+  for(let x=-27;x<=28;x+=5.5){block(g.vpm,R.white,x,3.8,18,.55,7.6,.55);block(g.vpm,R.white,x,3.8,23,.55,7.6,.55);}
+  [-27,28].forEach(x=>block(g.vpm,R.white,x,7.7,20.5,.65,.5,6));
+  [18,23].forEach(z=>block(g.vpm,R.white,.5,7.7,z,56,.5,.55));
+  for(let x=-27;x<29;x+=1.6)block(g.vpm,R.roof,x,8.05,20.5,.12,.14,5.5);
+  // Quiet, low-poly planting and furniture, consistent with the existing site.
+  const crownG=new THREE.IcosahedronGeometry(1,1),trunkG=new THREE.CylinderGeometry(.13,.19,1,7);geo.push(crownG,trunkG);
+  const tree=(x,z,s=1)=>{const c=new THREE.Mesh(crownG,R.tree);c.position.set(x,3.1*s,z);c.scale.set(1.55*s,1.85*s,1.55*s);g.vpm.add(c);const tr=new THREE.Mesh(trunkG,M.trunk);tr.position.set(x,1.2*s,z);tr.scale.y=2.4*s;g.vpm.add(tr);const n=new THREE.Mesh(crownG,M.npmTree);n.position.copy(c.position);n.scale.copy(c.scale);g.npm.add(n);};
+  for(let i=0;i<22;i++)tree(-59+i*5.5,-47+(i%3-1)*2,.65+(i%4)*.07);
+  [[-26,-12],[-23,0],[-25,15],[-13,13],[16,-10],[25,-8],[24,6],[24,24],[10,22],[-4,27],[1,-35],[52,11],[-55,35],[51,42]].forEach(([x,z],i)=>tree(x,z,.85+(i%3)*.15));
+  // Two soft-edged playground pads, seating, timber shelters and shrub beds.
+  [[-18,0,8,9],[18,0,9,10]].forEach(([x,z,w,d])=>{
+    flat(g.vpm,R.play,[[x-w/2,z-d/3],[x,z-d/2],[x+w/2,z],[x+w/3,z+d/2],[x-w/2,z+d/3]],.18);
+    block(g.vpm,R.wood,x-1,1.1,z,1.6,2.2,1.6);block(g.vpm,R.light,x+1,.9,z,3,.17,.8,-.25);
+    [-2,2].forEach(dx=>block(g.vpm,R.wood,x+dx,1.4,z-2,.13,2.8,.13));block(g.vpm,R.wood,x,2.8,z-2,4.4,.18,.18);block(g.vpm,R.wood,x,.7,z-2,1.2,.13,.55);
+  });
+  for(let i=0;i<12;i++){const x=-25+(i%6)*10,z=i<6?-53:12;block(g.vpm,R.wood,x,.75,z,2.3,.18,.65);block(g.vpm,R.roof,x-.7,.38,z,.12,.7,.5);block(g.vpm,R.roof,x+.7,.38,z,.12,.7,.5);}
+  for(let i=0;i<14;i++){const x=-56+i*8.2;block(g.vpm,R.roof,x,2.2,-42,.10,4.4,.10);block(g.vpm,R.light,x+.4,4.35,-42,.9,.13,.24);}
+  batches.forEach((byMat,parent)=>byMat.forEach((list,mat)=>{const im=new THREE.InstancedMesh(unit,mat,list.length);list.forEach((a,i)=>{dummy.position.set(a[0],a[1],a[2]);dummy.scale.set(a[3],a[4],a[5]);dummy.rotation.set(0,a[6],0);dummy.updateMatrix();im.setMatrixAt(i,dummy.matrix);});im.instanceMatrix.needsUpdate=true;im.receiveShadow=false;parent.add(im);}));
+  const maxH=Math.max(...towers.map(b=>6.2+(b.tiers?b.tiers.reduce((s,t)=>s+t.f,0):b.f)*3.1))+1.4;
+  root.userData.geo=geo;root.userData.reference={towers:6,estimated:true};
+  return {root,g,radius:Math.max(Math.hypot(132,122)/2,maxH*.95),maxH};
+}
+
 function buildProject(spec) {
+  if (spec.reference === 'six-tower-courtyard') return buildReferenceProject(spec);
   const M = mats(), FH = 3.2, root = new THREE.Group(), g = { npm: new THREE.Group(), vpm: new THREE.Group(), cim: new THREE.Group() }; root.add(g.npm, g.vpm, g.cim);
   const fac = spec.facade == null ? 1 : spec.facade, bim = !!spec.bim;
   const geo = [], box = (w, h, d, m, x, y, z) => { const G = new THREE.BoxGeometry(w, h, d); geo.push(G); const o = new THREE.Mesh(G, m); o.position.set(x, y, z); return o };
@@ -1688,11 +1793,15 @@ function bindModes(container, viewer) {
 
 /* ===================== НАШИ ПРОЕКТЫ ===================== */
 const PROJECTS = [
-  { title: 'Жилой дом на стилобате', tag: 'Концепция · НПМ', facts: [['13 960', 'м² СПП'], ['65 м', 'высота'], ['0,48', 'га участок']],
-    spec: { site: { w: 72, d: 66 }, trees: 30, seed: 5, play: { x: -20, z: 22, r: 4 }, paths: [[0, 27, 64, 2.4], [26, 4, 2.4, 40]], buildings: [
-      { x: -1, z: -4, w: 50, d: 22, f: 1, kind: 'podium', mat: 'pod' },
-      { x: 11, z: -5, w: 22, d: 20, f: 19, y0: 3.2, kind: 'res', mat: 'beige' },
-      { x: -14, z: -3, w: 20, d: 16, f: 9, y0: 3.2, kind: 'res', mat: 'beige' }] } },
+  { title: 'Жилой комплекс с внутренним двором', tag: 'ВПМ · по референсам', facts: [['6', 'корпусов'], ['Двор', 'благоустройство'], ['3D', 'реконструкция']],
+    spec: { reference: 'six-tower-courtyard', site: { w:132,d:122 }, buildings: [
+      {x:-41,z:-28,w:22,d:22,f:27,finish:'white',tiers:[{w:25,d:25,f:11},{w:22,d:22,f:9,x:-1,z:-1},{w:16,d:18,f:7,x:-2,z:-2}]},
+      {x:-42,z:9,w:21,d:20,f:19,finish:'red'},
+      {x:-31,z:39,w:32,d:21,f:23,finish:'grey',tiers:[{w:32,d:21,f:12},{w:28,d:19,f:11,x:-2,z:0}]},
+      {x:34,z:36,w:23,d:24,f:26,finish:'white',tiers:[{w:27,d:27,f:10},{w:24,d:24,f:10,x:1,z:1},{w:17,d:19,f:6,x:2,z:2}]},
+      {x:43,z:-23,w:23,d:33,f:24,finish:'grey',tiers:[{w:23,d:33,f:13},{w:20,d:29,f:11,x:0,z:-2}]},
+      {x:0,z:-29,w:23,d:22,f:21,finish:'gold'}
+    ] } },
   { title: 'Жилой дом с башней', tag: 'Концепция · НПМ', facts: [['11 570', 'м² СПП'], ['83 м', 'высота'], ['0,33', 'га участок']],
     spec: { site: { w: 60, d: 56 }, trees: 16, seed: 8, paths: [[0, 22, 52, 2.2]], buildings: [
       { x: 0, z: 2, w: 42, d: 30, f: 2, kind: 'podium', mat: 'terra' },
@@ -1723,7 +1832,7 @@ let modalViewer = null;
   list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openProject(+b.dataset.open) });
   const modal = $('#modal'); let lastFocus = null;
   function openProject(i) {
-    lastFocus = document.activeElement; modal.hidden = false; document.body.style.overflow = 'hidden'; $('#mTitle').textContent = 'Проект · ' + PROJECTS[i].tag;
+    lastFocus = document.activeElement; modal.hidden = false; document.body.style.overflow = 'hidden'; $('#mTitle').textContent = i === 0 ? 'Реконструкция по изображениям · размеры ориентировочные' : 'Проект · ' + PROJECTS[i].tag;
     if (!modalViewer) { modalViewer = new Viewer($('#modalStage'), { interactive: true, zoom: true, auto: false }); bindModes(modal, modalViewer) }
     modalViewer.mode = 'vpm'; modalViewer._placed = false; modalViewer.setProject(PROJECTS[i].spec); const mb = $('[data-modes]', modal); mb && mb.sync && mb.sync();
     $$('[data-view]', modal).forEach(x => x.setAttribute('aria-pressed', String(x.dataset.view === 'iso'))); $('#mClose').focus();
