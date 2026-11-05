@@ -33,7 +33,7 @@ html{scroll-behavior:smooth;scroll-padding-top:var(--gran-header-height,64px)}
 @media(max-width:640px){.why-grid{grid-template-columns:1fr;gap:22px}.why-metric strong{font-size:42px}.contract-v11{grid-template-columns:1fr}.contract-terms{grid-template-columns:1fr}.kpbox{grid-template-columns:1fr}.prj-overlay{gap:4px}.prj-overlay>div{padding:5px 7px}.prj-overlay strong{font-size:12px}}
 </style></head><body>
 <!doctype html>
-<html lang="ru"><!-- GRAN 1.10: hero and projects grid; first project reference reconstruction -->
+<html lang="ru"><!-- GRAN 1.11: hero-only grid; calibrated richer model colors -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -636,10 +636,10 @@ html{scroll-padding-top:var(--gran-header-height,64px)}
 /* v1.7: smooth reduction of supersampled canvases; no pixelated scaling */
 .viewer canvas,.stage canvas{image-rendering:auto}
 
-/* v1.10: same grid on hero and projects only */
+/* v1.11: grid only on hero, plain projects and other sections */
 body{background:var(--paper)}
-#models,#why-us,#calc,#process,#norms,#faq{background:transparent}
-.hero,#projects{background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/40px 40px,var(--paper)}
+#models,#projects,#why-us,#calc,#process,#norms,#faq{background:transparent}
+.hero{background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/40px 40px,var(--paper)}
 </style>
 </head>
 <body>
@@ -952,7 +952,7 @@ let setMode = () => {};
   try{renderer=new THREE.WebGLRenderer({canvas,antialias:true});if(!renderer.getContext())throw 0}catch(e){$('#vstats').innerHTML='<div class="row"><span>WebGL недоступен. Показан статичный вид</span></div>';return}
   renderer.setPixelRatio(1);
   renderer.shadowMap.enabled=false; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;
+  renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
   const BG=0xE9EDF1;
   const scene=new THREE.Scene(); scene.background=new THREE.Color(BG); scene.fog=new THREE.Fog(BG,220,420);
   const camera=new THREE.PerspectiveCamera(32,1,1,1200);
@@ -965,7 +965,8 @@ let setMode = () => {};
   const sun=new THREE.DirectionalLight(0xfff3e2,0.95); sun.position.set(80,120,60); sun.castShadow=true;
   sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera,{left:-90,right:90,top:90,bottom:-90,near:10,far:360}); sun.shadow.bias=-0.00015; sun.shadow.normalBias=0.08; scene.add(sun);
 
-  const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.85},o));
+  // Three r128: palette hex inputs are sRGB, lighting uses linear values.
+  const M=(c,o={})=>{const m=new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.85},o));m.color.convertSRGBToLinear();if(m.emissive)m.emissive.convertSRGBToLinear();return m};
   const box=(w,h,d,mat,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);return m};
   const plane=(w,d,mat,x,z,y)=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat);p.rotation.x=-Math.PI/2;p.position.set(x,y,z);p.receiveShadow=true;return p};
   const unit=new THREE.BoxGeometry(1,1,1), dummy=new THREE.Object3D();
@@ -975,7 +976,7 @@ let setMode = () => {};
   const B=[
     {id:'P',name:'Стилобат',x:-2,z:-7.5,w:38,d:20,f:2,y0:0,col:0x8E8A84,podium:true,fac:'натуральный камень'},
     {id:'A',name:'Корпус 1',x:-13,z:-7,w:13,d:13,f:20,y0:6,col:0xE6E0D4,fac:'светлый камень'},
-    {id:'B',name:'Корпус 2',x:10,z:-9,w:11,d:15,f:14,y0:6,col:0x9A5B40,fac:'клинкерный кирпич'},
+    {id:'B',name:'Корпус 2',x:10,z:-9,w:11,d:15,f:14,y0:6,col:0xB86B49,fac:'клинкерный кирпич'},
     {id:'C1',name:'Корпус 3, секция 1',x:-7,z:14,w:18,d:9,f:9,y0:0,col:0xCDD1D6,fac:'фиброцементные панели'},
     {id:'C2',name:'Корпус 3, секция 2',x:11,z:14,w:18,d:9,f:7,y0:0,col:0xB9BEC5,fac:'фиброцементные панели'},
   ];
@@ -1023,8 +1024,8 @@ let setMode = () => {};
     const s=new THREE.Mesh(npmStemG,npmTreeM);s.position.set(t.x,.7*t.s,t.z);gNPM.add(s)});
 
   /* ВПМ */
-  const glass=M(0x34465A,{metalness:.05,roughness:.75});
-  const frameW=M(0xF3F3F1,{roughness:.6}), frameD=M(0x3B4048,{roughness:.5,metalness:.3});
+  const glass=M(0x647F8C,{metalness:0,roughness:.88});
+  const frameW=M(0xF3F3F1,{roughness:.6}), frameD=M(0x68747C,{roughness:.85,metalness:0});
   const rail=M(0xB8CCD9,{transparent:true,opacity:.45,metalness:.3,roughness:.1});
   const win=[],frm=[],frmD=[],band=[],balc=[],rl=[],pil=[];
   B.forEach(b=>{
@@ -1057,12 +1058,12 @@ let setMode = () => {};
     for(let i=0;i<3;i++) gVPM.add(box(1.3,1,1.3,frameD,b.x-b.w*.3+i*1.8,top+.5,b.z+b.d*.3));
   });
   inst(frm,frameW,gVPM); inst(frmD,frameD,gVPM); inst(win,glass,gVPM); inst(band,frameW,gVPM,true); inst(balc,frameW,gVPM,true); inst(rl,rail,gVPM); inst(pil,M(0xD9D2C4),gVPM,true);
-  const lawn=M(0x7FA36A,{roughness:1}), path=M(0xBDB6AA,{roughness:1}), play=M(0xC0704E,{roughness:1}), court=M(0xCFC9BE,{roughness:1});
+  const lawn=M(0x83B466,{roughness:1}), path=M(0xBDB6AA,{roughness:1}), play=M(0xC0704E,{roughness:1}), court=M(0xCFC9BE,{roughness:1});
   gVPM.add(plane(SITE.x1-SITE.x0-1,SITE.z1-SITE.z0-1,court,0,2,0.06));
   gVPM.add(plane(50,4.5,lawn,0,22.6,0.08),plane(3.6,36,lawn,-24.5,-1,0.08),plane(3.6,36,lawn,24.5,-1,0.08),plane(34,4,lawn,1,6.8,0.08),plane(50,1.8,path,0,19.6,0.09),plane(1.8,40,path,-22,0,0.09));
   const pg=new THREE.Mesh(new THREE.CircleGeometry(3.4,40),play);pg.rotation.x=-Math.PI/2;pg.position.set(19,0.1,6.5);gVPM.add(pg);
   const trunkG=new THREE.CylinderGeometry(.2,.3,2.6,7), crownG=new THREE.IcosahedronGeometry(2.1,1);
-  const trunkM=M(0x5A4636), crowns=[0x5E8C4E,0x6F9A5A,0x4E7A45].map(c=>M(c,{roughness:.9,flatShading:true}));
+  const trunkM=M(0x5A4636), crowns=[0x5E8C4E,0x73A953,0x4E7A45].map(c=>M(c,{roughness:.9,flatShading:true}));
   trees.forEach((t,i)=>{const tr=new THREE.Mesh(trunkG,trunkM);tr.position.set(t.x,1.3*t.s,t.z);tr.scale.setScalar(t.s);tr.castShadow=true;gVPM.add(tr);
     const c=new THREE.Mesh(crownG,crowns[i%3]);c.position.set(t.x,4.1*t.s,t.z);c.scale.set(t.s,t.s*1.15,t.s);c.castShadow=true;gVPM.add(c)});
   for(let i=0;i<6;i++) gVPM.add(box(1.8,.45,.6,frameD,-15+i*6,.3,17.8));
@@ -1197,14 +1198,14 @@ function mats() {
   if (MAT) return MAT;
   const S = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .85 }, o));
   // цвета благоустройства задаются в sRGB и переводятся в линейное пространство рендера
-  const SL = (c, o = {}) => { const m = S(c, o); m.color.convertSRGBToLinear(); if (m.emissive) m.emissive.convertSRGBToLinear(); return m };
+  const SL = S; // A single conversion pass below covers the complete palette.
   MAT = {
-    stone: S(0xE6E0D4), brick: S(0x9A5B40), panel: S(0xCDD1D6), pod: S(0x8E8A84), school: S(0xDCD3C2), white: S(0xF3F3F1, { roughness: .6 }),
-    beige: S(0xE4D6BC), terra: S(0xA4553E), dark: S(0x4A4542),
-    slab: S(0xCFC9BE, { roughness: 1 }), glass: S(0x34465A, { roughness: .75, metalness: .05 }), frame: S(0x3B4048, { roughness: .5, metalness: .3 }),
-    tree: S(0x6F9A5A, { flatShading: true }), trunk: S(0x5A4636), field: S(0x7FA36A, { roughness: 1 }), line: new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    stone: S(0xE6E0D4), brick: S(0xB86B49), panel: S(0xCDD1D6), pod: S(0x8E8A84), school: S(0xDCD3C2), white: S(0xF3F3F1, { roughness: .6 }),
+    beige: S(0xE4D6BC), terra: S(0xBE6C49), dark: S(0x4A4542),
+    slab: S(0xCFC9BE, { roughness: 1 }), glass: S(0x647F8C, { roughness: .88, metalness: 0 }), frame: S(0x68747C, { roughness: .85, metalness: 0 }),
+    tree: S(0x73A953, { flatShading: true }), trunk: S(0x5A4636), field: S(0x83B466, { roughness: 1 }), line: new THREE.MeshBasicMaterial({ color: 0xffffff }),
     path: SL(0xCDBFA8, { roughness: 1 }), play: S(0xC0704E, { roughness: 1 }),
-    lawn: SL(0x86A965, { roughness: 1 }), pave: SL(0xD6D2CA, { roughness: 1 }), asphalt: SL(0x6C7076, { roughness: 1 }), curb: SL(0xEEECE7, { roughness: 1 }),
+    lawn: SL(0x8DB86D, { roughness: 1 }), pave: SL(0xD6D2CA, { roughness: 1 }), asphalt: SL(0x6C7076, { roughness: 1 }), curb: SL(0xEEECE7, { roughness: 1 }),
     rubber2: SL(0x4F86B8, { roughness: 1 }), wood: SL(0x9C7A55), sand: SL(0xE8D7A8, { roughness: 1 }), soil: SL(0x6B5340, { roughness: 1 }),
     car: SL(0xFFFFFF, { roughness: .45, metalness: .15 }), crown: SL(0xFFFFFF, { flatShading: true, roughness: .9 }), birch: SL(0xEDEAE2), lampHead: SL(0xFFF6D8, { emissive: 0x6A5A30 }),
     rail: S(0x9FC3DC, { transparent: true, opacity: .4, metalness: .3, roughness: .1 }),
@@ -1220,6 +1221,9 @@ function mats() {
     bronze: S(0x8C6A3F, { metalness: .6, roughness: .35 }), roofGreen: S(0x6E9E57, { roughness: 1 }),
     slabEdge: new THREE.LineBasicMaterial({ color: 0xA9A296 }),
   };
+  // Convert each material once, including Lambert/Basic and room arrays.
+  const converted=new Set();
+  Object.values(MAT).flat().forEach(m=>{if(m&&m.color&&!converted.has(m)){m.color.convertSRGBToLinear();if(m.emissive)m.emissive.convertSRGBToLinear();converted.add(m);}});
   return MAT;
 }
 /* First project: six-volume reconstruction from supplied views, not a surveyed model.
@@ -1228,8 +1232,8 @@ function buildReferenceProject(spec) {
   const M = mats(), root = new THREE.Group(), g = {npm:new THREE.Group(),vpm:new THREE.Group(),cim:new THREE.Group()}, geo=[];
   root.add(g.npm,g.vpm,g.cim);
   if (!M.reference) {
-    const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.92,metalness:0});
-    M.reference={white:mat(0xe4e5e1),grey:mat(0xaeb8ba),gold:mat(0xb59c60),red:mat(0x9c5845),glass:mat(0x67777f),roof:mat(0x626a6e),lawn:mat(0xa2b68c),pave:mat(0xd7dad7),play:mat(0xc69773),wood:mat(0xb3906d),tree:mat(0x9eb694),light:mat(0xf1f0e9)};
+    const mat=c=>{const m=new THREE.MeshStandardMaterial({color:c,roughness:.88,metalness:0});m.color.convertSRGBToLinear();return m};
+    M.reference={white:mat(0xeeede6),grey:mat(0xb4c2c9),gold:mat(0xd6ad50),red:mat(0xb65f43),glass:mat(0x708995),roof:mat(0x626a6e),lawn:mat(0x8bb66b),pave:mat(0xd7dad7),play:mat(0xcf9565),wood:mat(0xb3906d),tree:mat(0x78a856),light:mat(0xf1f0e9)};
   }
   const R=M.reference, unit=new THREE.BoxGeometry(1,1,1), dummy=new THREE.Object3D();geo.push(unit);
   const batches=new Map();
@@ -1599,7 +1603,7 @@ function buildLand(c) {
   const furn = [], lamps = [];
   const along = (P, step, fn) => { for (let i = Math.floor(step / 2); i < P.length - 2; i += step) { const a = P[i - 1] || P[i], b = P[i + 1], tx = b.x - a.x, tz = b.z - a.z, l = Math.hypot(tx, tz) || 1; fn(P[i], tx / l, tz / l) } };
   const benches = (P, step, side, hw) => along(P, step, (p, tx, tz) => { const nx = -tz * side, nz = tx * side, o = (hw || 1.1) + .7, r = -Math.atan2(tz, tx);
-    furn.push([p.x + nx * o, .42, p.z + nz * o, 1.8, .1, .55, r, 0x9C7A55], [p.x + nx * (o + .25), .7, p.z + nz * (o + .25), 1.8, .45, .07, r, 0x9C7A55], [p.x + nx * o, .2, p.z + nz * o, 1.5, .4, .4, r, 0x3B4048]) });
+    furn.push([p.x + nx * o, .42, p.z + nz * o, 1.8, .1, .55, r, 0x9C7A55], [p.x + nx * (o + .25), .7, p.z + nz * (o + .25), 1.8, .45, .07, r, 0x9C7A55], [p.x + nx * o, .2, p.z + nz * o, 1.5, .4, .4, r, 0x68747C]) });
   const lampsAlong = (P, step, side, hw) => along(P, step, (p, tx, tz) => { const o = (hw || 1.1) + .5; lamps.push([p.x - tz * side * o, p.z + tx * side * o]) });
   // входные дорожки от подъездов к тротуару
   const ent = (bend) => B.map((b, i) => { const off = bend ? (i % 2 ? -1 : 1) * Math.min(6, b.w * .25) : 0;
@@ -1616,8 +1620,8 @@ function buildLand(c) {
     solid(new THREE.BoxGeometry(2.8, .14, .14), M.frame, px, 2.55, pz); solid(new THREE.BoxGeometry(.7, .08, .4), M.play, px - .55, .6, pz); solid(new THREE.BoxGeometry(.7, .08, .4), M.play, px + .55, .6, pz);
     solid(new THREE.CylinderGeometry(1.2, 1.2, .18, 20), M.rubber2, cx + q * .3, .3, cz - q * .9); solid(new THREE.CylinderGeometry(.08, .08, 1.2, 8), M.frame, cx + q * .3, .9, cz - q * .9);
     const sb = solid(new THREE.BoxGeometry(2.6, .35, 2.6), M.wood, cx - q * .5, .18, cz + q * .75); solid(new THREE.BoxGeometry(2.2, .05, 2.2), M.sand, cx - q * .5, .34, cz + q * .75, false); void sb;
-    for (let a = 0; a < 6.283; a += .2) furn.push([cx + Math.cos(a) * (r + .1), .45, cz + Math.sin(a) * (r + .1), .08, .9, .08, 0, 0x3B4048]);
-    for (let a = 0; a < 6.283; a += .2) furn.push([cx + Math.cos(a + .1) * (r + .1), .85, cz + Math.sin(a + .1) * (r + .1), .25 * r, .05, .05, -(a + .1) - Math.PI / 2, 0x3B4048]);
+    for (let a = 0; a < 6.283; a += .2) furn.push([cx + Math.cos(a) * (r + .1), .45, cz + Math.sin(a) * (r + .1), .08, .9, .08, 0, 0x68747C]);
+    for (let a = 0; a < 6.283; a += .2) furn.push([cx + Math.cos(a + .1) * (r + .1), .85, cz + Math.sin(a + .1) * (r + .1), .25 * r, .05, .05, -(a + .1) - Math.PI / 2, 0x68747C]);
   }
   const flowers = [];
   const bed = (cx, cz, rx, rz, cols) => { const D = disk(1, M.soil, cx, cz, .11, 28); D.scale.set(rx, rz, 1); rects.push([cx, cz, rx * 2, rz * 2]);
@@ -1651,7 +1655,7 @@ function buildLand(c) {
   // сборка инстансами
   const dummy = new THREE.Object3D(), col = new THREE.Color();
   const im = (G, list, m, parent, sh) => { if (!list.length) return; geo.push(G); const o = new THREE.InstancedMesh(G, m, list.length);
-    list.forEach((a, i) => { dummy.position.set(a[0], a[1], a[2]); dummy.rotation.set(0, a[6] || 0, 0); dummy.scale.set(a[3], a[4], a[5]); dummy.updateMatrix(); o.setMatrixAt(i, dummy.matrix); if (a[7] != null) o.setColorAt(i, col.set(a[7])) });
+    list.forEach((a, i) => { dummy.position.set(a[0], a[1], a[2]); dummy.rotation.set(0, a[6] || 0, 0); dummy.scale.set(a[3], a[4], a[5]); dummy.updateMatrix(); o.setMatrixAt(i, dummy.matrix); if (a[7] != null) o.setColorAt(i, col.set(a[7]).convertSRGBToLinear()) });
     if (o.instanceColor) o.instanceColor.needsUpdate = true; o.castShadow = !!sh; o.receiveShadow = true; parent.add(o) };
   const U = () => new THREE.BoxGeometry(1, 1, 1);
   im(U(), dash.concat(marks), M.line, g.vpm); im(U(), cars, M.car, g.vpm, true); im(U(), furn, M.car, g.vpm, true);
@@ -1678,7 +1682,7 @@ class Viewer {
     if (!HAS3D) { el.insertAdjacentHTML('beforeend', '<div class="nogl">Для 3D-просмотра нужен интернет и браузер с поддержкой WebGL</div>'); this.dead = true; return }
     const c = this.canvas = document.createElement('canvas'); el.prepend(c);
     try { this.r = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: this.o.preserve }) } catch (e) { el.insertAdjacentHTML('beforeend', '<div class="nogl">WebGL недоступен в этом браузере</div>'); this.dead = true; return }
-    const r = this.r; r.setPixelRatio(1); r.shadowMap.enabled = false; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1;
+    const r = this.r; r.setPixelRatio(1); r.shadowMap.enabled = false; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.12;
     const s = this.scene = new THREE.Scene(); s.background = new THREE.Color(0xE9EDF1);
     s.add(new THREE.HemisphereLight(0xffffff, 0xa9b1bb, .85));
     const sun = this.sun = new THREE.DirectionalLight(0xfff3e2, .95); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.00015; sun.shadow.normalBias = .08; s.add(sun, sun.target);
