@@ -1,0 +1,11 @@
+{
+  "name": "gran-demo-checks",
+  "private": true,
+  "scripts": {
+    "test": "node tests/geometry.cjs && node tests/dom.cjs && node tests/dom.cjs --webgl-blocked && node tests/scenes.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0",
+    "three": "0.128.0"
+  }
+}

@@ -1,0 +1,23 @@
+name: Check website and 3D logic
+on:
+  pull_request:
+    paths:
+      - index.html
+      - assets/**
+      - tests/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/checks.yml
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test

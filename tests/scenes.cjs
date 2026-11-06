@@ -1,0 +1,24 @@
+const fs=require('fs'),assert=require('assert'),{JSDOM}=require('jsdom'),THREE=require('three');
+const html=fs.readFileSync('index.html','utf8'),dom=new JSDOM(html,{url:'http://localhost/',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,d=w.document,renderers=[];
+const native2d={createLinearGradient:()=>({addColorStop(){}}),fillRect(){}};
+w.HTMLCanvasElement.prototype.getContext=()=>native2d;w.HTMLCanvasElement.prototype.setPointerCapture=function(){};
+w.matchMedia=()=>({matches:false});w.IntersectionObserver=class{observe(){} disconnect(){}};w.ResizeObserver=class{observe(){} disconnect(){}};w.requestAnimationFrame=()=>0;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
+class Renderer{constructor(o){this.domElement=o.canvas;this.shadowMap={};renderers.push(this)}getContext(){return {}}setPixelRatio(){}setSize(){}render(s,c){s.updateMatrixWorld(true);c.updateMatrixWorld(true);this.scene=s;this.camera=c}}
+THREE.WebGLRenderer=Renderer;w.THREE=THREE;
+for(const p of ['assets/gran-visual.js','assets/reference-project.js'])w.eval(fs.readFileSync(p,'utf8'));
+const errors=[];w.addEventListener('error',e=>errors.push(String(e.error)));
+for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){let code=match[1];if(!code.trim())continue;if(code.includes('let calcViewer'))code+='\nwindow.__check={get:()=>({calcViewer,modalViewer,lastCalc,PROJECTS,buildProject,calcPrice,mats,setMode})};';w.eval(code)}
+const get=()=>w.__check.get();
+function check(){
+ const cv=get().calcViewer;assert(cv.p,'calculator geometry built');if(cv.lv)cv.lv.grp.visible=false;
+ for(const mode of ['npm','vpm','cim']){cv.setMode(mode);assert.equal(cv.lighting.mode,mode);assert.equal(cv.r.shadowMap.enabled,mode!=='cim');assert.equal(Object.entries(cv.p.g).filter(([k,v])=>v.visible).map(([k])=>k).join(),mode)}
+ for(let i=0;i<4;i++){d.querySelector(`[data-open="${i}"]`).click();const mv=get().modalViewer;assert.equal(mv.o.modes.join(),'vpm');mv.setMode('npm');assert.equal(mv.mode,'vpm');assert(mv.p.g.vpm.visible);d.querySelector('#mClose').click()}
+ // Hero selection still resolves actual floor and building metadata on the CPU.
+ const hero=renderers[0];d.querySelector('#viewer canvas').getBoundingClientRect=()=>({left:0,top:0,width:600,height:600});get().setMode('cim');hero.scene.updateMatrixWorld(true);hero.camera.updateMatrixWorld(true);
+ const pt=new THREE.Vector3(-13,31.5,-.5).project(hero.camera);const event=new w.MouseEvent('pointerup',{clientX:(pt.x+1)*300,clientY:(1-pt.y)*300,bubbles:true});d.querySelector('#viewer canvas').dispatchEvent(event);
+ assert.equal(d.querySelector('#vinfo').style.display,'block','hero IFC selection');assert(d.querySelector('#vinfoBody').textContent.includes('Корпус'));
+ get().setMode('npm');assert.equal(hero.shadowMap.enabled,true);get().setMode('vpm');assert.equal(hero.shadowMap.enabled,true);get().setMode('cim');assert.equal(hero.shadowMap.enabled,false);
+ assert.deepEqual(errors,[]);console.log('CPU scene lifecycle, mode visibility/styles, VPM-only project modal, IFC picking: PASS');
+ w.close();
+}
+setTimeout(check,750);
