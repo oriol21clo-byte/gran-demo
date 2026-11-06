@@ -31,6 +31,15 @@ html{scroll-behavior:smooth;scroll-padding-top:var(--gran-header-height,64px)}
 .contract-download .btn{margin-top:10px}
 @media(max-width:900px){.calc2{grid-template-columns:minmax(0,1fr)}.calc2 .stage{height:390px}.calc2>.panel{height:auto}.why-grid{gap:16px}}
 @media(max-width:640px){.why-grid{grid-template-columns:1fr;gap:22px}.why-metric strong{font-size:42px}.contract-v11{grid-template-columns:1fr}.contract-terms{grid-template-columns:1fr}.kpbox{grid-template-columns:1fr}.prj-overlay{gap:4px}.prj-overlay>div{padding:5px 7px}.prj-overlay strong{font-size:12px}}
+</style><style>
+/* On narrow cards, keep project facts below the model rather than over its facade. */
+@media(max-width:640px){
+ #projects .prj .stage{height:auto}
+ #projects .prj .stage canvas{height:clamp(220px,70vw,280px)}
+ #projects .prj .prj-overlay{position:static;transform:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:auto;padding:12px;background:var(--surface);border-top:1px solid var(--line)}
+ #projects .prj .prj-overlay>div{align-items:flex-start;text-align:left;min-width:0;gap:3px}
+ #projects .prj .prj-overlay strong,#projects .prj .prj-overlay span{text-shadow:none;overflow-wrap:anywhere}
+}
 </style></head><body>
 <!doctype html>
 <html lang="ru"><!-- GRAN 1.11: hero-only grid; calibrated richer model colors -->
@@ -644,7 +653,16 @@ body{background:var(--paper)}
 #models,#projects,#why-us,#calc,#process,#norms,#faq{background:transparent}
 .hero{background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/40px 40px,var(--paper)}
 </style>
-</head>
+<style>
+/* On narrow cards, keep project facts below the model rather than over its facade. */
+@media(max-width:640px){
+ #projects .prj .stage{height:auto}
+ #projects .prj .stage canvas{height:clamp(220px,70vw,280px)}
+ #projects .prj .prj-overlay{position:static;transform:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:auto;padding:12px;background:var(--surface);border-top:1px solid var(--line)}
+ #projects .prj .prj-overlay>div{align-items:flex-start;text-align:left;min-width:0;gap:3px}
+ #projects .prj .prj-overlay strong,#projects .prj .prj-overlay span{text-shadow:none;overflow-wrap:anywhere}
+}
+</style></head>
 <body>
 
 <header class="top">
@@ -941,8 +959,8 @@ const MODE_DESC = {
 // Bound pixel and shadow budgets for the multiple simultaneous 3D views.
 function granRenderScale(w,h,preview){
   const small=matchMedia('(max-width:760px)').matches;
-  const desired=preview?1.5:Math.min(small?1.5:2,Math.max(1.5,window.devicePixelRatio||1));
-  return Math.max(1,Math.min(desired,Math.sqrt((preview?1200000:2400000)/Math.max(1,w*h))));
+  const desired=small?1.75:2.25;
+  return Math.max(1,Math.min(desired,Math.sqrt((preview?1400000:2600000)/Math.max(1,w*h))));
 }
 let setMode = () => {};
 (function(){
@@ -960,11 +978,11 @@ let setMode = () => {};
   renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
   const BG=0xE9EDF1;
   const scene=new THREE.Scene(); scene.background=new THREE.Color(BG); scene.fog=new THREE.Fog(BG,220,420);
-  const camera=new THREE.PerspectiveCamera(32,1,1,1200);
+  const camera=new THREE.OrthographicCamera(-1,1,1,-1,1,1200);camera.aspect=1;
   const target=new THREE.Vector3(0,24,2);
   const DEF={theta:0.70,phi:1.12,radius:235};
   let theta=DEF.theta,phi=DEF.phi,radius=DEF.radius,radiusT=radius;
-  const updateCam=()=>{camera.position.set(target.x+radius*Math.sin(phi)*Math.sin(theta),target.y+radius*Math.cos(phi),target.z+radius*Math.sin(phi)*Math.cos(theta));camera.lookAt(target)};
+  const updateCam=()=>{GranVisual.project(camera,camera.aspect,radius);camera.position.set(target.x+radius*Math.sin(phi)*Math.sin(theta),target.y+radius*Math.cos(phi),target.z+radius*Math.sin(phi)*Math.cos(theta));camera.lookAt(target)};
 
   const lighting=GranVisual.create(scene,renderer,matchMedia('(max-width:760px)').matches);
   GranVisual.frame(lighting,95,target);
@@ -1027,7 +1045,7 @@ let setMode = () => {};
 
   /* ВПМ */
   const glass=GranVisual.glass(M(0x6F8893));
-  const frameW=M(0xF3F3F1,{roughness:.6}), frameD=M(0x68747C,{roughness:.85,metalness:0});
+  const frameW=M(0xE1E3DE,{roughness:.6}), frameD=M(0x68747C,{roughness:.85,metalness:0});
   const rail=M(0xB8CCD9,{transparent:true,opacity:.45,metalness:.3,roughness:.1});
   const win=[],frm=[],frmD=[],band=[],balc=[],rl=[],pil=[];
   B.forEach(b=>{
@@ -1146,14 +1164,14 @@ let setMode = () => {};
   }
   $('#vinfo .x').addEventListener('click',()=>{$('#vinfo').style.display='none';clearSel()});
 
-  function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;if(!w||!h)return;renderer.setPixelRatio(granRenderScale(w,h,false));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();DEF.radius=w<560?300:235}
+  function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;if(!w||!h)return;renderer.setPixelRatio(granRenderScale(w,h,false));renderer.setSize(w,h,false);GranVisual.project(camera,w/h,radius);DEF.radius=w<560?300:235}
   if(window.ResizeObserver)new ResizeObserver(resize).observe(wrap); window.addEventListener('resize',resize); resize(); radius=radiusT=DEF.radius;
   setMode('vpm'); growT=1; gVPM.scale.y=1;
   let visible=true; if(window.IntersectionObserver)new IntersectionObserver(es=>{visible=es[0].isIntersecting}).observe(wrap);
   let prev=performance.now(), frames=0;
   (function loop(now){requestAnimationFrame(loop);const dt=Math.min(50,now-prev);prev=now;
     if(!visible&&frames>5)return;
-    if(!drag&&now-lastAct>2500)theta+=dt*.000055;
+    // Keep the approved view stable; dragging still rotates the model.
     radius+=(radiusT-radius)*(1-Math.exp(-dt/140));
     if(growG&&growT<1){growT=Math.min(1,growT+dt/650);growG.scale.y=Math.max(.001,1-Math.pow(1-growT,3))}
     if(growT<1)renderer.shadowMap.needsUpdate=true;updateCam();renderer.render(scene,camera);
@@ -1202,7 +1220,7 @@ function mats() {
   // цвета благоустройства задаются в sRGB и переводятся в линейное пространство рендера
   const SL = S; // A single conversion pass below covers the complete palette.
   MAT = {
-    stone: S(0xE6E0D4), brick: S(0xB86B49), panel: S(0xCDD1D6), pod: S(0x8E8A84), school: S(0xDCD3C2), white: S(0xF3F3F1, { roughness: .6 }),
+    stone: S(0xE6E0D4), brick: S(0xB86B49), panel: S(0xCDD1D6), pod: S(0x8E8A84), school: S(0xDCD3C2), white: S(0xE1E3DE, { roughness: .6 }),
     beige: S(0xE4D6BC), terra: S(0xBE6C49), dark: S(0x4A4542),
     slab: S(0xCFC9BE, { roughness: 1 }), glass: S(0x647F8C, { roughness: .88, metalness: 0 }), frame: S(0x68747C, { roughness: .85, metalness: 0 }),
     tree: S(0x73A953, { flatShading: true }), trunk: S(0x5A4636), field: S(0x83B466, { roughness: 1 }), line: new THREE.MeshBasicMaterial({ color: 0xffffff }),
@@ -1591,14 +1609,14 @@ class Viewer {
     this.lighting=GranVisual.create(s,r,!this.o.interactive||matchMedia('(max-width:760px)').matches);
     this.sun=this.lighting.sun;
     const sc = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: .14 })); sc.rotation.x = -Math.PI / 2; sc.position.y = -1.25; sc.receiveShadow = true; s.add(sc);
-    this.cam = new THREE.PerspectiveCamera(32, 1, 1, 6000);
+    this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 6000);
     if (this.o.interactive && THREE.OrbitControls) {
       const k = this.ctl = new THREE.OrbitControls(this.cam, c); k.enableDamping = true; k.dampingFactor = .08; k.enableZoom = this.o.zoom; k.maxPolarAngle = Math.PI * .97; k.autoRotate = this.o.auto; k.autoRotateSpeed = .35;
       k.addEventListener('start', () => { k.autoRotate = false; clearTimeout(this._t); if (this.o.auto) this._t = setTimeout(() => k.autoRotate = true, 7000) });
     }
     this.theta = .8; this.visible = true; this.anim = null;
     if ('IntersectionObserver' in window) new IntersectionObserver(e => { this.visible = e[0].isIntersecting; this.dirty = true }).observe(el);
-    const rs = () => { const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return; r.setPixelRatio(granRenderScale(w,h,!this.o.interactive)); r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); this.dirty = true };
+    const rs = () => { const w = c.clientWidth || el.clientWidth, h = c.clientHeight || el.clientHeight; if (!w || !h) return; r.setPixelRatio(granRenderScale(w,h,!this.o.interactive)); r.setSize(w, h, false); GranVisual.project(this.cam,w/h,this.viewDistance||this.dist||235); this.dirty = true };
     if ('ResizeObserver' in window) new ResizeObserver(rs).observe(el); addEventListener('resize', rs); rs();
     let prev = performance.now();
     const loop = now => { requestAnimationFrame(loop); const dt = Math.min(50, now - prev); prev = now; if (!this.visible || (!this.p && !this.lv)) return; this.tick(dt); if (this.dirty) { this.dirty = false; r.render(s, this.cam) } };
@@ -1611,14 +1629,15 @@ class Viewer {
     const R = this.p.radius, sun = this.sun; this.target = new THREE.Vector3(0, this.p.maxH * .45, 0);
     GranVisual.frame(this.lighting,R,this.target);
     this.dist = R * 3.3; this.clip(R);
-    if (this.ctl) { this.ctl.target.copy(this.target); this.ctl.minDistance = R * .5; this.ctl.maxDistance = R * 6 }
-    if (!keepView || !this._placed) { this.place(spec.reference?-2.35:.8, 1.05, this.dist); this._placed = true }
+    if (this.ctl) { this.ctl.target.copy(this.target); this.ctl.minZoom=.55;this.ctl.maxZoom=3.5 }
+    if (!keepView || !this._placed) { this.cam.zoom=1;this.place(spec.reference?-2.35:.8, 1.05, this.dist); this._placed = true }
     else { const sp = new THREE.Spherical().setFromVector3(this.cam.position.clone().sub(this.ctl ? this.ctl.target : this.target)); this.place(sp.theta, sp.phi, this.dist) }
   }
   clip(R) { this.cam.near = Math.max(.5, R * .04); this.cam.far = Math.max(2000, R * 24); this.cam.updateProjectionMatrix() }
-  place(theta, phi, rad) { const v = new THREE.Vector3().setFromSpherical(new THREE.Spherical(rad, phi, theta)); this.cam.position.copy(this.target).add(v); this.cam.lookAt(this.target); this.theta = theta; if (this.ctl) this.ctl.update(); this.dirty = true }
+  place(theta, phi, rad) { const v = new THREE.Vector3().setFromSpherical(new THREE.Spherical(rad, phi, theta)); this.cam.position.copy(this.target).add(v); this.cam.lookAt(this.target);this.viewDistance=rad;GranVisual.project(this.cam,this.cam.aspect||1,rad); this.theta = theta; if (this.ctl) this.ctl.update(); this.dirty = true }
   view(name) {
     if (this.dead || !this.p) return;
+    this.cam.zoom=1;
     const reference=!!this.p.spec.reference;
     const V = { iso: [reference?-2.35:.8, 1.05, 1], front: [reference?Math.PI:0, 1.45, 1], side: [Math.PI / 2, 1.45, 1], top: [0, .02, 1], ground: [reference?-2.45:.5, 1.48, .72] }[name];
     const cur = new THREE.Spherical().setFromVector3(this.cam.position.clone().sub(this.target));
@@ -1737,7 +1756,7 @@ let modalViewer = null;
 (function () {
   const list = $('#projList');
   list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="ov tr cap">${p.tag}</div><div class="prj-overlay">${p.facts.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div></div><div class="body"><dl class="nda"><div><dt>Адрес объекта</dt><dd>NDA</dd></div><div><dt>Застройщик</dt><dd>NDA</dd></div></dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
-  $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: true, modes: ['vpm'] }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
+  $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: false, modes: ['vpm'] }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
   list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openProject(+b.dataset.open) });
   const modal = $('#modal'); let lastFocus = null;
   function openProject(i) {
@@ -1755,7 +1774,7 @@ let modalViewer = null;
 /* ===================== КАЛЬКУЛЯТОР + ПРЕВЬЮ ===================== */
 let calcViewer, lastCalc;
 (function () {
-  const cv = calcViewer = new Viewer($('#calcStage'), { interactive: !isTouch, zoom: false, auto: true, preserve: true });
+  const cv = calcViewer = new Viewer($('#calcStage'), { interactive: !isTouch, zoom: false, auto: false, preserve: true });
   const modes = bindModes($('#calcStage'), cv);
   const aR = $('#cAreaR'), aN = $('#cArea'), MIN = 200, MAX = 400000;
   const toA = v => { const a = MIN * Math.pow(MAX / MIN, v / 100); return a < 2000 ? Math.round(a / 50) * 50 : a < 20000 ? Math.round(a / 100) * 100 : Math.round(a / 1000) * 1000 };

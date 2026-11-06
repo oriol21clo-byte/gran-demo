@@ -4,8 +4,8 @@
   if (!global.THREE) return;
   const T=global.THREE;
   const PRESETS={
-    npm:{background:0xeee7dc,sky:0xfff4e6,ground:0xa99f8f,ambient:.76,sun:0xffe8c7,key:1.45,fill:0xdde8f4,fillPower:.38,exposure:1.02,shadows:true},
-    vpm:{background:0xe3e9ee,sky:0xe4eeff,ground:0x949b9e,ambient:.72,sun:0xffefd7,key:1.65,fill:0xcbdff7,fillPower:.48,exposure:1.03,shadows:true},
+    npm:{background:0xeee7dc,sky:0xfff4e6,ground:0xa99f8f,ambient:.9,sun:0xffe8c7,key:1.05,fill:0xdde8f4,fillPower:.28,exposure:.98,shadows:true},
+    vpm:{background:0xe3e9ee,sky:0xe4eeff,ground:0x949b9e,ambient:.9,sun:0xffefd7,key:1.05,fill:0xcbdff7,fillPower:.3,exposure:.98,shadows:true},
     cim:{background:0xe8edf2,sky:0xffffff,ground:0xb7c3cf,ambient:1.02,sun:0xf3f6fc,key:.72,fill:0xddeaff,fillPower:.25,exposure:1.06,shadows:false}
   };
   let studio;
@@ -14,12 +14,12 @@
     const faces=Array.from({length:6},(_,i)=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');const g=x.createLinearGradient(0,0,0,64);g.addColorStop(0,'#eff4fa');g.addColorStop(.48,i%2?'#c3d1df':'#e2eaf3');g.addColorStop(1,'#718293');x.fillStyle=g;x.fillRect(0,0,64,64);x.fillStyle='rgba(255,255,255,.55)';x.fillRect(i%2?12:38,7,11,32);return c});
     studio=new T.CubeTexture(faces);studio.encoding=T.sRGBEncoding;studio.needsUpdate=true;return studio;
   }
-  function glass(material){material.roughness=.32;material.metalness=.12;material.envMap=environment();material.envMapIntensity=.5;return material;}
+  function glass(material){material.roughness=.42;material.metalness=.08;material.envMap=environment();material.envMapIntensity=.35;return material;}
   function create(scene,renderer,compact){
     renderer.outputEncoding=T.sRGBEncoding;renderer.toneMapping=T.ACESFilmicToneMapping;
-    renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
+    renderer.shadowMap.type=T.VSMShadowMap;renderer.shadowMap.autoUpdate=false;
     const hemisphere=new T.HemisphereLight(),sun=new T.DirectionalLight(),fill=new T.DirectionalLight();
-    sun.castShadow=true;sun.shadow.mapSize.set(compact?1024:2048,compact?1024:2048);sun.shadow.bias=-.00012;sun.shadow.normalBias=.065;sun.shadow.radius=3;
+    sun.castShadow=true;sun.shadow.mapSize.set(compact?1024:2048,compact?1024:2048);sun.shadow.bias=-.00012;sun.shadow.normalBias=.065;sun.shadow.radius=5;sun.shadow.blurSamples=8;
     scene.add(hemisphere,sun,sun.target,fill,fill.target);
     const rig={scene,renderer,hemisphere,sun,fill,compact,mode:'vpm'};apply(rig,'vpm');return rig;
   }
@@ -31,7 +31,7 @@
     rig.renderer.toneMappingExposure=p.exposure;rig.renderer.shadowMap.enabled=p.shadows;rig.renderer.shadowMap.needsUpdate=true;
   }
   function frame(rig,radius,target){
-    rig.sun.position.set(-radius*1.2,radius*1.8,radius*1.05);rig.sun.target.position.copy(target);
+    rig.sun.position.set(-radius*.8,radius*3.8,radius*.6);rig.sun.target.position.copy(target);
     rig.fill.position.set(radius*1.3,radius*.85,-radius);rig.fill.target.position.copy(target);
     Object.assign(rig.sun.shadow.camera,{left:-radius*1.5,right:radius*1.5,top:radius*1.5,bottom:-radius*1.5,near:.5,far:radius*7});rig.sun.shadow.camera.updateProjectionMatrix();rig.renderer.shadowMap.needsUpdate=true;
   }
@@ -45,5 +45,12 @@
     }
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.computeVertexNormals();const m=new T.Mesh(g,material);m.receiveShadow=true;return m;
   }
-  global.GranVisual={presets:PRESETS,create,apply,frame,glass,rectangles};
+  // Orthographic projection matches the architectural presentation used for selection.
+  // Recompute the frustum when zooming/resizing; OrbitControls camera.zoom stays intact.
+  function project(camera,aspect,distance){
+    camera.aspect=aspect;
+    if(camera.isOrthographicCamera){const half=Math.tan(16*Math.PI/180)*distance;camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;}
+    camera.updateProjectionMatrix();
+  }
+  global.GranVisual={presets:PRESETS,create,apply,frame,glass,rectangles,project};
 })(window);

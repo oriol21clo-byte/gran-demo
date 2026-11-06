@@ -11,6 +11,16 @@ for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){l
 const get=()=>w.__check.get();
 function check(){
  const cv=get().calcViewer;assert(cv.p,'calculator geometry built');if(cv.lv)cv.lv.grp.visible=false;
+ // Orthographic fitting must preserve scale through aspect changes and user zoom.
+ const camera=new THREE.OrthographicCamera(-1,1,1,-1,.5,2000);
+ w.GranVisual.project(camera,2,200);const height=camera.top-camera.bottom;
+ assert(Math.abs((camera.right-camera.left)/height-2)<1e-10);
+ camera.zoom=1.8;w.GranVisual.project(camera,.65,200);
+ assert.equal(camera.zoom,1.8);assert.equal(camera.top-camera.bottom,height);
+ assert(Math.abs((camera.right-camera.left)/height-.65)<1e-10);
+ w.GranVisual.project(camera,.65,100);assert.equal(camera.top-camera.bottom,height/2);
+ assert(cv.cam.isOrthographicCamera,'calculator uses fitted architectural projection');
+ cv.cam.zoom=2;cv.view('top');assert.equal(cv.cam.zoom,1,'view presets restore framing');cv.anim=null;
  for(const mode of ['npm','vpm','cim']){cv.setMode(mode);assert.equal(cv.lighting.mode,mode);assert.equal(cv.r.shadowMap.enabled,mode!=='cim');assert.equal(Object.entries(cv.p.g).filter(([k,v])=>v.visible).map(([k])=>k).join(),mode)}
  for(let i=0;i<4;i++){d.querySelector(`[data-open="${i}"]`).click();const mv=get().modalViewer;assert.equal(mv.o.modes.join(),'vpm');mv.setMode('npm');assert.equal(mv.mode,'vpm');assert(mv.p.g.vpm.visible);d.querySelector('#mClose').click()}
  // Hero selection still resolves actual floor and building metadata on the CPU.
