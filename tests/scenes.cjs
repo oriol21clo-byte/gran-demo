@@ -2,7 +2,7 @@ const fs=require('fs'),assert=require('assert'),{JSDOM}=require('jsdom'),THREE=r
 const html=fs.readFileSync('index.html','utf8'),dom=new JSDOM(html,{url:'http://localhost/',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window,d=w.document,renderers=[];
 const native2d={createLinearGradient:()=>({addColorStop(){}}),fillRect(){}};
 w.HTMLCanvasElement.prototype.getContext=()=>native2d;w.HTMLCanvasElement.prototype.setPointerCapture=function(){};
-w.matchMedia=()=>({matches:false});w.IntersectionObserver=class{observe(){} disconnect(){}};w.ResizeObserver=class{observe(){} disconnect(){}};w.requestAnimationFrame=()=>0;w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
+w.matchMedia=()=>({matches:false});w.IntersectionObserver=class{observe(){} disconnect(){}};w.ResizeObserver=class{observe(){} disconnect(){}};const animationCallbacks=[];w.requestAnimationFrame=cb=>{animationCallbacks.push(cb);return 0};w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
 class Renderer{constructor(o){this.domElement=o.canvas;this.shadowMap={};renderers.push(this)}getContext(){return {}}setPixelRatio(){}setSize(){}render(s,c){s.updateMatrixWorld(true);c.updateMatrixWorld(true);this.scene=s;this.camera=c}}
 THREE.WebGLRenderer=Renderer;w.THREE=THREE;
 for(const p of ['assets/gran-visual.js','assets/reference-project.js'])w.eval(fs.readFileSync(p,'utf8'));
@@ -10,6 +10,8 @@ const errors=[];w.addEventListener('error',e=>errors.push(String(e.error)));
 for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){let code=match[1];if(!code.trim())continue;if(code.includes('let calcViewer'))code+='\nwindow.__check={get:()=>({calcViewer,modalViewer,lastCalc,PROJECTS,buildProject,calcPrice,mats,setMode})};';w.eval(code)}
 const get=()=>w.__check.get();
 function check(){
+ const heroFrame=animationCallbacks[0], hc=renderers[0].camera;let clock=w.performance.now()+4000;heroFrame(clock);
+ const angle=()=>Math.atan2(hc.position.x,hc.position.z-2);const start=angle();for(let i=0;i<60;i++)heroFrame(clock+=1000/60);const at60=angle();for(let i=0;i<120;i++)heroFrame(clock+=1000/120);const at120=angle();assert(Math.abs((at60-start)-.035)<1e-6);assert(Math.abs((at120-at60)-.035)<1e-6,'rotation speed independent of 60/120 Hz');
  const cv=get().calcViewer;assert(cv.p,'calculator geometry built');if(cv.lv)cv.lv.grp.visible=false;
  // Orthographic fitting must preserve scale through aspect changes and user zoom.
  const camera=new THREE.OrthographicCamera(-1,1,1,-1,.5,2000);

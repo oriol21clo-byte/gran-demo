@@ -959,7 +959,7 @@ const MODE_DESC = {
 // Bound pixel and shadow budgets for the multiple simultaneous 3D views.
 function granRenderScale(w,h,preview){
   const small=matchMedia('(max-width:760px)').matches;
-  const desired=small?1.75:2.25;
+  const desired=small?1.5:1.75;
   return Math.max(1,Math.min(desired,Math.sqrt((preview?1400000:2600000)/Math.max(1,w*h))));
 }
 let setMode = () => {};
@@ -977,7 +977,7 @@ let setMode = () => {};
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
   const BG=0xE9EDF1;
-  const scene=new THREE.Scene(); scene.background=new THREE.Color(BG); scene.fog=new THREE.Fog(BG,220,420);
+  const scene=new THREE.Scene(); scene.background=new THREE.Color(BG); scene.fog=new THREE.Fog(BG,450,850);
   const camera=new THREE.OrthographicCamera(-1,1,1,-1,1,1200);camera.aspect=1;
   const target=new THREE.Vector3(0,24,2);
   const DEF={theta:0.70,phi:1.12,radius:235};
@@ -992,7 +992,7 @@ let setMode = () => {};
   const box=(w,h,d,mat,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);return m};
   const plane=(w,d,mat,x,z,y)=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat);p.rotation.x=-Math.PI/2;p.position.set(x,y,z);p.receiveShadow=true;return p};
   const unit=new THREE.BoxGeometry(1,1,1), dummy=new THREE.Object3D();
-  function inst(list,mat,parent,shadow){const im=new THREE.InstancedMesh(unit,mat,list.length);list.forEach((a,i)=>{dummy.position.set(a[0],a[1],a[2]);dummy.scale.set(a[3],a[4],a[5]);dummy.updateMatrix();im.setMatrixAt(i,dummy.matrix)});im.castShadow=!!shadow;im.receiveShadow=false;parent.add(im);return im}
+  function inst(list,mat,parent,shadow){const im=new THREE.InstancedMesh(unit,mat,list.length);list.forEach((a,i)=>{dummy.position.set(a[0],a[1],a[2]);dummy.scale.set(a[3],a[4],a[5]);dummy.updateMatrix();im.setMatrixAt(i,dummy.matrix)});im.castShadow=!!shadow;im.receiveShadow=true;parent.add(im);return im}
 
   const FH=3;
   const B=[
@@ -1013,14 +1013,18 @@ let setMode = () => {};
 
   const ctx=new THREE.Group(), gNPM=new THREE.Group(), gVPM=new THREE.Group(), gCIM=new THREE.Group(), cars=new THREE.Group();
   scene.add(ctx,gNPM,gVPM,gCIM); ctx.add(cars);
-  ctx.add(plane(800,800,M(0xDCE1E6,{roughness:1}),0,0,0));
+  const contextGround=M(0xDCE1E6,{roughness:1});ctx.add(plane(800,800,contextGround,0,0,0));
   const nMat=M(0xF0F3F6,{roughness:.95});
   neighbors.forEach(([x,z,w,d,h])=>{const m=box(w,h,d,nMat,x,h/2,z);m.castShadow=false;m.receiveShadow=true;ctx.add(m);
     const e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0xB7BEC7,transparent:true,opacity:.18}));e.position.copy(m.position);ctx.add(e)});
-  const road=M(0xA7B2C1,{roughness:.95}), walk=M(0xD5DCE5,{roughness:1}), mark=new THREE.MeshBasicMaterial({color:0xF2F2F2});
-  ctx.add(GranVisual.rectangles([[0,-31,160,10],[0,35,160,10],[-37,2,10,160],[37,2,10,160]],.03,road));
-  ctx.add(GranVisual.rectangles([[0,-24.5,160,3],[0,28.5,160,3],[-30.5,2,3,160],[30.5,2,3,160]],.04,walk));
-  const marks=[]; for(let i=-78;i<80;i+=6){marks.push([i,0.05,-31,3,0.02,0.25],[i,0.05,35,3,0.02,0.25],[-37,0.05,i,0.25,0.02,3],[37,0.05,i,0.25,0.02,3])}
+  const road=M(0x929B9F,{roughness:.95}), walk=M(0xD5DCE5,{roughness:1}), mark=new THREE.MeshBasicMaterial({color:0xF2F2F2});
+  const roadRects=[[0,-31,320,10],[0,35,320,10],[-37,2,10,320],[37,2,10,320]];
+  ctx.add(GranVisual.rectangles(roadRects,.08,road));
+  ctx.add(GranVisual.rectangles([[0,-24.5,320,3],[0,28.5,320,3],[-30.5,2,3,320],[30.5,2,3,320]],.09,walk,roadRects));
+  const marks=[]; for(let i=-156;i<158;i+=6){
+    if(Math.abs(i-37)>8&&Math.abs(i+37)>8)marks.push([i,.12,-31,3,.02,.25],[i,.12,35,3,.02,.25]);
+    if(Math.abs(i+31)>8&&Math.abs(i-35)>8)marks.push([-37,.12,i,.25,.02,3],[37,.12,i,.25,.02,3]);
+  }
   inst(marks,mark,ctx);
   const carCols=[0x2B3A55,0xD8D8D8,0x8C1D1D,0x1E1E1E,0x6C7A89,0xE5E1D8];
   for(let i=0;i<14;i++){const side=i%2?-1:1;const x=-60+i*9+rnd()*3;const c=new THREE.Group();
@@ -1083,7 +1087,7 @@ let setMode = () => {};
   gVPM.add(plane(50,4.5,lawn,0,22.6,0.08),plane(3.6,36,lawn,-24.5,-1,0.08),plane(3.6,36,lawn,24.5,-1,0.08),plane(34,4,lawn,1,6.8,0.08),plane(50,1.8,path,0,19.6,0.09),plane(1.8,40,path,-22,0,0.09));
   const pg=new THREE.Mesh(new THREE.CircleGeometry(3.4,40),play);pg.rotation.x=-Math.PI/2;pg.position.set(19,0.1,6.5);gVPM.add(pg);
   const trunkG=new THREE.CylinderGeometry(.2,.3,2.6,7), crownG=new THREE.IcosahedronGeometry(2.1,1);
-  const trunkM=M(0x5A4636), crowns=[0x5E8C4E,0x73A953,0x4E7A45].map(c=>M(c,{roughness:.9,flatShading:true}));
+  const trunkM=M(0x5A4636), crowns=[0x617B51,0x78915D,0x526F49].map(c=>M(c,{roughness:.9,flatShading:true}));
   trees.forEach((t,i)=>{const tr=new THREE.Mesh(trunkG,trunkM);tr.position.set(t.x,1.3*t.s,t.z);tr.scale.setScalar(t.s);tr.castShadow=true;gVPM.add(tr);
     const c=new THREE.Mesh(crownG,crowns[i%3]);c.position.set(t.x,4.1*t.s,t.z);c.scale.set(t.s,t.s*1.15,t.s);c.castShadow=true;gVPM.add(c)});
   for(let i=0;i<6;i++) gVPM.add(box(1.8,.45,.6,frameD,-15+i*6,.3,17.8));
@@ -1118,7 +1122,7 @@ let setMode = () => {};
 
   let mode='vpm', growT=1, growG=null;
   const baseSet=setMode;
-  setMode=m=>{baseSet(m);mode=m;GranVisual.apply(lighting,m);if(m==='cim')heroBim();gNPM.visible=m==='npm';gVPM.visible=m==='vpm';gCIM.visible=m==='cim';cars.visible=m==='vpm';siteLine.visible=m!=='cim';
+  setMode=m=>{baseSet(m);mode=m;GranVisual.apply(lighting,m);contextGround.color.set(m==='vpm'?0xC5C7C6:0xDCE1E6).convertSRGBToLinear();if(m==='cim')heroBim();gNPM.visible=m==='npm';gVPM.visible=m==='vpm';gCIM.visible=m==='cim';cars.visible=m==='vpm';siteLine.visible=m!=='cim';
     renderStats(m);hideTip();$('#vinfo').style.display='none';clearSel();growG=m==='npm'?gNPM:m==='vpm'?gVPM:gCIM;growT=0};
   // BIM строится при первом открытии ЦИМ той же функцией, что и в калькуляторе; высота этажа 3,2 м приводится к 3 м этой сцены
   let bimG=null;
@@ -1171,7 +1175,7 @@ let setMode = () => {};
   let prev=performance.now(), frames=0;
   (function loop(now){requestAnimationFrame(loop);const dt=Math.min(50,now-prev);prev=now;
     if(!visible&&frames>5)return;
-    // Keep the approved view stable; dragging still rotates the model.
+    if(!drag&&now-lastAct>2500)theta+=dt*.000035;
     radius+=(radiusT-radius)*(1-Math.exp(-dt/140));
     if(growG&&growT<1){growT=Math.min(1,growT+dt/650);growG.scale.y=Math.max(.001,1-Math.pow(1-growT,3))}
     if(growT<1)renderer.shadowMap.needsUpdate=true;updateCam();renderer.render(scene,camera);
@@ -1223,7 +1227,7 @@ function mats() {
     stone: S(0xE6E0D4), brick: S(0xB86B49), panel: S(0xCDD1D6), pod: S(0x8E8A84), school: S(0xDCD3C2), white: S(0xE1E3DE, { roughness: .6 }),
     beige: S(0xE4D6BC), terra: S(0xBE6C49), dark: S(0x4A4542),
     slab: S(0xCFC9BE, { roughness: 1 }), glass: S(0x647F8C, { roughness: .88, metalness: 0 }), frame: S(0x68747C, { roughness: .85, metalness: 0 }),
-    tree: S(0x73A953, { flatShading: true }), trunk: S(0x5A4636), field: S(0x83B466, { roughness: 1 }), line: new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    tree: S(0x78915D, { flatShading: true }), trunk: S(0x5A4636), field: S(0x87996F, { roughness: 1 }), line: new THREE.MeshBasicMaterial({ color: 0xffffff }),
     path: SL(0xCDBFA8, { roughness: 1 }), play: S(0xC0704E, { roughness: 1 }),
     lawn: SL(0x8DB86D, { roughness: 1 }), pave: SL(0xD6D2CA, { roughness: 1 }), asphalt: SL(0x6C7076, { roughness: 1 }), curb: SL(0xEEECE7, { roughness: 1 }),
     rubber2: SL(0x4F86B8, { roughness: 1 }), wood: SL(0x9C7A55), sand: SL(0xE8D7A8, { roughness: 1 }), soil: SL(0x6B5340, { roughness: 1 }),
@@ -1611,7 +1615,7 @@ class Viewer {
     const sc = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: .14 })); sc.rotation.x = -Math.PI / 2; sc.position.y = -1.25; sc.receiveShadow = true; s.add(sc);
     this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 6000);
     if (this.o.interactive && THREE.OrbitControls) {
-      const k = this.ctl = new THREE.OrbitControls(this.cam, c); k.enableDamping = true; k.dampingFactor = .08; k.enableZoom = this.o.zoom; k.maxPolarAngle = Math.PI * .97; k.autoRotate = this.o.auto; k.autoRotateSpeed = .35;
+      const k = this.ctl = new THREE.OrbitControls(this.cam, c); k.enableDamping = true; k.dampingFactor = .08; k.enableZoom = this.o.zoom; k.maxPolarAngle = Math.PI * .97; k.autoRotate = this.o.auto; k.autoRotateSpeed = .2;
       k.addEventListener('start', () => { k.autoRotate = false; clearTimeout(this._t); if (this.o.auto) this._t = setTimeout(() => k.autoRotate = true, 7000) });
     }
     this.theta = .8; this.visible = true; this.anim = null;
@@ -1648,8 +1652,8 @@ class Viewer {
   tick(dt) {
     if (this.lv && this.lv.grp.visible) this.tickLive(dt);
     if (this.anim) { const a = this.anim; a.t = Math.min(1, a.t + dt / 650); const e = 1 - Math.pow(1 - a.t, 3), L = i => a.from[i] + (a.to[i] - a.from[i]) * e; this.place(L(0), L(1), L(2)); if (a.t >= 1) this.anim = null }
-    else if (this.ctl) { this.ctl.autoRotateSpeed = .35 * dt / (1000 / 60); this.ctl.dampingFactor = 1 - Math.exp(-dt / 180); if (this.ctl.update()) this.dirty = true }
-    else if (this.o.auto) { this.theta += dt * .000055; this.place(this.theta, 1.05, this.dist) }
+    else if (this.ctl) { this.ctl.autoRotateSpeed = .2 * dt / (1000 / 60); this.ctl.dampingFactor = 1 - Math.exp(-dt / 180); if (this.ctl.update()) this.dirty = true }
+    else if (this.o.auto) { this.theta += dt * .000035; this.place(this.theta, 1.05, this.dist) }
   }
   setMode(m) { if(!this.o.modes.includes(m))m=this.o.modes[0];this.mode = m; this.dirty = true;if(this.lighting)GranVisual.apply(this.lighting,m);if(this.lv){this.lv.body.material.color.set(m==='npm'?0xC9BCA7:0xE6E9EE).convertSRGBToLinear();this.lv.seam.material.color.set(m==='npm'?0xB8A88E:0x1F4FBF).convertSRGBToLinear();} if (this.p) for (const k in this.p.g) this.p.g[k].visible = !(this.lv && this.lv.grp.visible && !this.lv.reveal) && k === m }
   // Живой макет «как конструктор»: пока двигают площадь, этажи-блоки на лету падают сверху и встают друг на друга
@@ -1756,12 +1760,12 @@ let modalViewer = null;
 (function () {
   const list = $('#projList');
   list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="ov tr cap">${p.tag}</div><div class="prj-overlay">${p.facts.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div></div><div class="body"><dl class="nda"><div><dt>Адрес объекта</dt><dd>NDA</dd></div><div><dt>Застройщик</dt><dd>NDA</dd></div></dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
-  $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: false, modes: ['vpm'] }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
+  $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: true, modes: ['vpm'] }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
   list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openProject(+b.dataset.open) });
   const modal = $('#modal'); let lastFocus = null;
   function openProject(i) {
     lastFocus = document.activeElement; modal.hidden = false; document.body.style.overflow = 'hidden'; $('#mTitle').textContent = i === 0 ? 'Реконструкция по изображениям · размеры ориентировочные' : 'Проект · ' + PROJECTS[i].tag;
-    if (!modalViewer) { modalViewer = new Viewer($('#modalStage'), { interactive: true, zoom: true, auto: false, modes: ['vpm'] }) }
+    if (!modalViewer) { modalViewer = new Viewer($('#modalStage'), { interactive: true, zoom: true, auto: true, modes: ['vpm'] }) }
     modalViewer.mode = 'vpm'; modalViewer._placed = false; modalViewer.setProject(PROJECTS[i].spec);
     $$('[data-view]', modal).forEach(x => x.setAttribute('aria-pressed', String(x.dataset.view === 'iso'))); $('#mClose').focus();
   }
@@ -1774,7 +1778,7 @@ let modalViewer = null;
 /* ===================== КАЛЬКУЛЯТОР + ПРЕВЬЮ ===================== */
 let calcViewer, lastCalc;
 (function () {
-  const cv = calcViewer = new Viewer($('#calcStage'), { interactive: !isTouch, zoom: false, auto: false, preserve: true });
+  const cv = calcViewer = new Viewer($('#calcStage'), { interactive: !isTouch, zoom: false, auto: true, preserve: true });
   const modes = bindModes($('#calcStage'), cv);
   const aR = $('#cAreaR'), aN = $('#cArea'), MIN = 200, MAX = 400000;
   const toA = v => { const a = MIN * Math.pow(MAX / MIN, v / 100); return a < 2000 ? Math.round(a / 50) * 50 : a < 20000 ? Math.round(a / 100) * 100 : Math.round(a / 1000) * 1000 };
