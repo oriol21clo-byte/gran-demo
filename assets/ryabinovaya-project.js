@@ -45,22 +45,32 @@
   const tower=[[-25,-17],[-9,-17],[-9,3],[-25,3]];
   const wedge=[[-3,-12],[38,1],[9,28]];
   const towerH=56.1,lowH=19.8,roofY=x=>lowH+.49+.09*(x+3);
-  volume(tower,.14,towerH,M.body,.7,0,false,true);
+  volume(tower,.14,towerH,M.body,1.8,0,false,true);
   volume(wedge,.14,lowH,M.body,3.5,.09);volume(wedge,lowH+.14,.35,M.roof,3.5,.09,true);
-  // Verified elevated glazed link: open passage below, no invented ground lobby/supports.
-  const bridge={x0:-9.35,x1:.75,z:-4,bottom:10.2,top:14.1,width:3.2};
-  const bridgeGlass=GranVisual.glass(mat(0x81939b,{transparent:true,opacity:.5,depthWrite:false,roughness:.24}));
-  const bx=(bridge.x0+bridge.x1)/2,bl=bridge.x1-bridge.x0,by=(bridge.bottom+bridge.top)/2;
-  box(M.frame,bx,bridge.bottom,-4,bl,.22,3.3,0,false);
-  box(bridgeGlass,bx,bridge.top,-4,bl,.10,3.2,0,false);
-  for(const side of [-1,1]){
-   const z=-4+side*1.6;box(bridgeGlass,bx,by,z,bl,3.7,.08,0,false);
-   for(let x=bridge.x0;x<=bridge.x1+.01;x+=bl/7)box(M.frame,x,by,z,.07,3.9,.15,0,false);
-   for(const y of [bridge.bottom+.17,bridge.top-.07])box(M.frame,bx,y,z,bl,.09,.16,0,false);
+  // Supplied photos supersede the earlier incorrect browser-agent description.
+  // A ground-level glazed connecting volume with a broad, gently sloped grey roof.
+  const bridgeGlass=GranVisual.glass(mat(0x9aa8b5,{roughness:.32,metalness:.08}));
+  const roofHeight=(x,z)=>3.6+.035*(x+9.3)+.01*(z+11);
+  const facadeCurve=new T.CatmullRomCurve3([[-9.35,3],[-6.6,4.5],[-3.7,5.6],[.2,7.6],[4.2,11.8]].map(([x,z])=>new T.Vector3(x,0,z)));
+  const front=facadeCurve.getPoints(40).map(p=>[p.x,p.z]);
+  const connectorPlan=[[-9.45,-11],[-2.4,-11],[4.2,11.8],...front.slice(0,-1).reverse()];
+  volume(connectorPlan,.10,.12,M.pave,.16);
+  const roofG=new T.ExtrudeGeometry(shape(connectorPlan,.16),{depth:.18,bevelEnabled:false,curveSegments:8});roofG.rotateX(-Math.PI/2);
+  const rp=roofG.attributes.position;for(let i=0;i<rp.count;i++)rp.setY(i,rp.getY(i)+roofHeight(rp.getX(i),rp.getZ(i)));rp.needsUpdate=true;roofG.computeVertexNormals();geo.push(roofG);
+  const connectorRoof=new T.Mesh(roofG,M.roof);connectorRoof.castShadow=connectorRoof.receiveShadow=true;vpm.add(connectorRoof);
+  function glazedWall(points){
+   for(let i=0;i<points.length-1;i++){
+    const a=points[i],b=points[i+1],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),n=Math.max(1,Math.round(L/1.05)),angle=-Math.atan2(dz,dx);
+    for(let k=0;k<n;k++){const t=(k+.5)/n,x=a[0]+dx*t,z=a[1]+dz*t,h=roofHeight(x,z)-.34;box(bridgeGlass,x,.24+h/2,z,L/n-.055,h,.10,angle,false);}
+    for(let k=0;k<=n;k++){const t=k/n,x=a[0]+dx*t,z=a[1]+dz*t,h=roofHeight(x,z)-.22;box(M.frame,x,.22+h/2,z,.055,h,.18,angle,false);}
+    beam(M.roof,[a[0],roofHeight(...a)+.05,a[1]],[b[0],roofHeight(...b)+.05,b[1]],.21,.18);
+    beam(M.cap,[a[0],.23,a[1]],[b[0],.23,b[1]],.15,.18);
+   }
   }
-  for(let x=bridge.x0;x<=bridge.x1+.01;x+=bl/7)box(M.frame,x,bridge.top,-4,.07,.12,3.3,0,false);
-  // A paved passage remains open under the bridge; entrances belong to each volume.
-  ribbon([[-7,-20],[-5,-9],[-5,6],[-2,17],[-6,32]],4.2,M.pave,.2);
+  // Glazed bays follow the curved courtyard elevation; both ends enter the buildings.
+  glazedWall(facadeCurve.getSpacedPoints(14).map(p=>[p.x,p.z]));
+  glazedWall([[-9.45,-11],[-2.4,-11]]);
+  ribbon([[-6,14],[-8,22],[-6,32]],3.2,M.pave,.2);
   function entrance(x,z,angle){const nx=Math.sin(angle),nz=Math.cos(angle),tx=Math.cos(angle),tz=-Math.sin(angle);
    box(bridgeGlass,x,2.1,z,3.6,3,.10,angle,false);
    for(const side of [-1,0,1])box(M.frame,x+tx*side*1.8,2.1,z+tz*side*1.8,.07,3.15,.22,angle,false);
@@ -74,7 +84,7 @@
     for(let f=0;f<floors;f++)for(let j=0;j<n;j++){
      const t=(margin+(j+.5)*(L-2*margin)/n)/L;let cx=a[0]+dx*t,cz=a[1]+dz*t;const cy=y0+f*3.3+1.15,scale=points===tower?1-.07*cy/towerH:1,pitch=(L-2*margin)/n*scale,ww=pitch-.25,wh=2.25;
      if(points===tower){cx=(cx+17)*scale-17;cz=(cz+7)*scale-7;}
-     box(glass[(f*3+j+i)%glass.length],cx+nx*.08,cy,cz+nz*.08,ww,wh,.12,angle,false);
+     box(f===0?bridgeGlass:glass[(f*3+j+i)%glass.length],cx+nx*.08,cy,cz+nz*.08,ww,wh,.12,angle,false);
      // Physical aluminium jambs, recessed glass, projecting sill and transom.
      for(const side of [-1,1]){
       const sx=cx+dx/L*side*(ww/2+.04),sz=cz+dz/L*side*(ww/2+.04);
@@ -87,7 +97,7 @@
     for(let f=1;f<=floors;f++){const scale=points===tower?1-.07*(f*3.3)/towerH:1;box(M.frame,((a[0]+b[0])/2+17)*scale-17+nx*.12,f*3.3+.25,((a[1]+b[1])/2+7)*scale-7+nz*.12,L*scale-.3,.14,.2,angle,false);}
    });
   }
-  facade(tower,17,1.7,.6,.9);facade(wedge,6,2.4,.6,4);
+  facade(tower,17,1.7,.6,1.9);facade(wedge,6,2.4,.6,4);
   // Stepped light crown, parapets and the visible low-building roof feature.
   // Layered crown with glazing, rather than the previous solid white cap.
   box(M.cap,-17,towerH+.6,-7,15.5,.65,19.2);box(M.roof,-17,towerH+1,-7,14.8,.12,18.5,0,false);
@@ -108,7 +118,7 @@
   trees.forEach(([x,z],i)=>{box(M.trunk,x,1.1,z,.22,2.2,.22);foliage.push([x,3.2+(i%3)*.2,z,1.8+(i%2)*.3,2.2,1.8,0,true]);});
   function instances(G,m,list){const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((a,i)=>{dummy.position.set(a[0],a[1],a[2]);dummy.rotation.set(0,a[6],0);dummy.scale.set(a[3],a[4],a[5]);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.castShadow=list.some(a=>a[7]);mesh.receiveShadow=true;vpm.add(mesh);}
   batches.forEach((list,m)=>instances(unit,m,list));leaf.forEach((m,i)=>instances(crown,m,foliage.filter((_,j)=>j%3===i)));
-  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Рябиновая',estimated:true,source:'guest view, 1/3 models loaded',mainMasses:2,wedge:true,heightRatio:towerH/lowH,bridge:{bottom:bridge.bottom,top:bridge.top,columns:0},slopedRoof:true,plantedIslands:2,entranceStairs:true,paverGeometry:true};
+  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Рябиновая',estimated:true,source:'user supplied photos for connector; other dimensions estimated',mainMasses:2,wedge:true,heightRatio:towerH/lowH,connector:{type:'ground-glazed',base:.1,roofMin:3.6,roofMax:4.3,curvedFront:true,roofOpaque:true},slopedRoof:true,plantedIslands:2,entranceStairs:true,paverGeometry:true};
   return{root,g,radius:Math.max(Math.hypot(105,92)/2,(towerH+5.6)*.95),maxH:towerH+5.6};
  }
  global.GranRyabinovaya={build};
