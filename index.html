@@ -1018,9 +1018,13 @@ let setMode = () => {};
   neighbors.forEach(([x,z,w,d,h])=>{const m=box(w,h,d,nMat,x,h/2,z);m.castShadow=false;m.receiveShadow=true;ctx.add(m);
     const e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0xB7BEC7,transparent:true,opacity:.18}));e.position.copy(m.position);ctx.add(e)});
   const road=M(0x929B9F,{roughness:.95}), walk=M(0xD5DCE5,{roughness:1}), mark=new THREE.MeshBasicMaterial({color:0xF2F2F2});
-  ctx.add(GranVisual.rectangles([[0,-31,160,10],[0,35,160,10],[-37,2,10,160],[37,2,10,160]],.03,road));
-  ctx.add(GranVisual.rectangles([[0,-24.5,160,3],[0,28.5,160,3],[-30.5,2,3,160],[30.5,2,3,160]],.04,walk));
-  const marks=[]; for(let i=-78;i<80;i+=6){marks.push([i,0.05,-31,3,0.02,0.25],[i,0.05,35,3,0.02,0.25],[-37,0.05,i,0.25,0.02,3],[37,0.05,i,0.25,0.02,3])}
+  const roadRects=[[0,-31,320,10],[0,35,320,10],[-37,2,10,320],[37,2,10,320]];
+  ctx.add(GranVisual.rectangles(roadRects,.08,road));
+  ctx.add(GranVisual.rectangles([[0,-24.5,320,3],[0,28.5,320,3],[-30.5,2,3,320],[30.5,2,3,320]],.09,walk,roadRects));
+  const marks=[]; for(let i=-156;i<158;i+=6){
+    if(Math.abs(i-37)>8&&Math.abs(i+37)>8)marks.push([i,.12,-31,3,.02,.25],[i,.12,35,3,.02,.25]);
+    if(Math.abs(i+31)>8&&Math.abs(i-35)>8)marks.push([-37,.12,i,.25,.02,3],[37,.12,i,.25,.02,3]);
+  }
   inst(marks,mark,ctx);
   const carCols=[0x2B3A55,0xD8D8D8,0x8C1D1D,0x1E1E1E,0x6C7A89,0xE5E1D8];
   for(let i=0;i<14;i++){const side=i%2?-1:1;const x=-60+i*9+rnd()*3;const c=new THREE.Group();

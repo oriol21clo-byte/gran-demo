@@ -12,6 +12,12 @@ for(const [i,p] of ctx.PROJECTS.entries()){
 const rects=ctx.GranVisual.rectangles([[0,-31,160,10],[0,35,160,10],[-37,2,10,160],[37,2,10,160]],.03,new THREE.MeshBasicMaterial());
 const a=rects.geometry.attributes.position.array;let area=0;for(let i=0;i<a.length;i+=9){const x=new THREE.Vector3(...a.slice(i,i+3)),y=new THREE.Vector3(...a.slice(i+3,i+6)),z=new THREE.Vector3(...a.slice(i+6,i+9));area+=y.sub(x).cross(z.sub(x)).length()/2;}
 assert.equal(area,6000,'road union area');
+// A crossing sidewalk must leave the carriageway completely clear.
+const cut=ctx.GranVisual.rectangles([[0,0,20,4]],.09,new THREE.MeshBasicMaterial(),[[0,0,6,20]]);
+const cp=cut.geometry.attributes.position.array;let ca=0;
+for(let i=0;i<cp.length;i+=9){const x=new THREE.Vector3(...cp.slice(i,i+3)),y=new THREE.Vector3(...cp.slice(i+3,i+6)),z=new THREE.Vector3(...cp.slice(i+6,i+9));const center=x.clone().add(y).add(z).divideScalar(3);assert(Math.abs(center.x)>=3,'sidewalk covers road');ca+=y.sub(x).cross(z.sub(x)).length()/2;}
+assert.equal(ca,56,'sidewalk area minus crossing');
+
 const mat=vm.runInContext('mats()',ctx);assert.equal(mat.npm.color.getHex(),mat.npmTree.color.getHex());
 const fakeRenderer={shadowMap:{}};const rig=ctx.GranVisual.create(new THREE.Scene(),fakeRenderer,false);for(const mode of ['npm','vpm','cim']){ctx.GranVisual.apply(rig,mode);assert.equal(fakeRenderer.shadowMap.enabled,mode!=='cim')}
 console.log('Geometry, road union, mode styles: PASS');

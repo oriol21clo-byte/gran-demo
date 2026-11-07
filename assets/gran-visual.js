@@ -5,7 +5,7 @@
   const T=global.THREE;
   const PRESETS={
     npm:{background:0xeee7dc,sky:0xfff4e6,ground:0xa99f8f,ambient:.9,sun:0xffe8c7,key:1.05,fill:0xdde8f4,fillPower:.28,exposure:.98,shadows:true},
-    vpm:{background:0xb9bdbd,sky:0xf2f1ed,ground:0x737b78,ambient:.68,sun:0xfff5e4,key:1.45,fill:0xdce3e7,fillPower:.22,exposure:.94,shadows:true},
+    vpm:{background:0xb9bdbd,sky:0xf2f1ed,ground:0x737b78,ambient:.78,sun:0xfff5e4,key:1.12,fill:0xdce3e7,fillPower:.25,exposure:.94,shadows:true},
     cim:{background:0xe8edf2,sky:0xffffff,ground:0xb7c3cf,ambient:1.02,sun:0xf3f6fc,key:.72,fill:0xddeaff,fillPower:.25,exposure:1.06,shadows:false}
   };
   let studio;
@@ -19,7 +19,7 @@
     renderer.outputEncoding=T.sRGBEncoding;renderer.toneMapping=T.ACESFilmicToneMapping;
     renderer.shadowMap.type=T.VSMShadowMap;renderer.shadowMap.autoUpdate=false;
     const hemisphere=new T.HemisphereLight(),sun=new T.DirectionalLight(),fill=new T.DirectionalLight();
-    sun.castShadow=true;sun.shadow.mapSize.set(compact?1024:2048,compact?1024:2048);sun.shadow.bias=-.00012;sun.shadow.normalBias=.065;sun.shadow.radius=8;sun.shadow.blurSamples=8;
+    sun.castShadow=true;sun.shadow.mapSize.set(compact?1024:2048,compact?1024:2048);sun.shadow.bias=-.00012;sun.shadow.normalBias=.065;sun.shadow.radius=16;sun.shadow.blurSamples=8;
     scene.add(hemisphere,sun,sun.target,fill,fill.target);
     const rig={scene,renderer,hemisphere,sun,fill,compact,mode:'vpm'};apply(rig,'vpm');return rig;
   }
@@ -36,11 +36,13 @@
     Object.assign(rig.sun.shadow.camera,{left:-radius*1.5,right:radius*1.5,top:radius*1.5,bottom:-radius*1.5,near:.5,far:radius*7});rig.sun.shadow.camera.updateProjectionMatrix();rig.renderer.shadowMap.needsUpdate=true;
   }
   // Coplanar road intersections must not overlap: preserves the original footprint.
-  function rectangles(rects,y,material){
-    const xs=[...new Set(rects.flatMap(([x,z,w,d])=>[x-w/2,x+w/2]))].sort((a,b)=>a-b),zs=[...new Set(rects.flatMap(([x,z,w,d])=>[z-d/2,z+d/2]))].sort((a,b)=>a-b),p=[];
+  function rectangles(rects,y,material,cutouts=[]){
+    const all=rects.concat(cutouts);
+    const xs=[...new Set(all.flatMap(([x,z,w,d])=>[x-w/2,x+w/2]))].sort((a,b)=>a-b),zs=[...new Set(all.flatMap(([x,z,w,d])=>[z-d/2,z+d/2]))].sort((a,b)=>a-b),p=[];
     for(let i=0;i<xs.length-1;i++)for(let j=0;j<zs.length-1;j++){
       const x0=xs[i],x1=xs[i+1],z0=zs[j],z1=zs[j+1],cx=(x0+x1)/2,cz=(z0+z1)/2;
       if(!rects.some(([x,z,w,d])=>Math.abs(cx-x)<=w/2&&Math.abs(cz-z)<=d/2))continue;
+      if(cutouts.some(([x,z,w,d])=>Math.abs(cx-x)<w/2&&Math.abs(cz-z)<d/2))continue;
       p.push(x0,y,z0,x0,y,z1,x1,y,z1,x0,y,z0,x1,y,z1,x1,y,z0);
     }
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.computeVertexNormals();const m=new T.Mesh(g,material);m.receiveShadow=true;return m;
