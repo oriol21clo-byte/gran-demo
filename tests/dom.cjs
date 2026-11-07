@@ -13,6 +13,6 @@ assert(/₽/.test(read()));console.log('Initial price:',read());
 for(const area of [200,12000,45000,400000]){const input=d.querySelector('#cArea');input.value=area;input.dispatchEvent(new w.Event('change',{bubbles:true}));assert(/₽/.test(read()));assert(!read().includes('NaN'));console.log('Area',area,'price',read());}
 for(const id of ['cNPM','cVPM','cCIM']){d.getElementById(id).checked=false;d.getElementById(id).dispatchEvent(new w.Event('input',{bubbles:true}));}assert.equal(read(),'—');
 d.getElementById('cCIM').checked=true;d.getElementById('cCIM').dispatchEvent(new w.Event('input',{bubbles:true}));assert(/₽/.test(read()));
-assert(d.querySelector('#grpNV').hidden);assert(!d.querySelector('#grpC').hidden);
+assert(!d.querySelector('#grpNV').hidden);assert(!d.querySelector('#grpC').hidden);
 for(const a of d.querySelectorAll('a[href^="#"]')){const id=a.getAttribute('href').slice(1);if(id)assert(d.getElementById(id),'missing anchor '+id)}
 setTimeout(()=>{assert.deepEqual(unexpected,[]);console.log('DOM, navigation, modal VPM-only, calculator, unavailable-WebGL fallback: PASS');w.close()},700);

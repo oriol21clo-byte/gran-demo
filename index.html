@@ -775,7 +775,7 @@ body{background:var(--paper)}
 
 <section id="calc">
   <div class="wrap">
-    <div class="label">Стоимость <span class="demo-tag">формула — заглушка</span></div>
+    <div class="label">Стоимость <span class="demo-tag">13 / 23 / 55 ₽ за м²</span></div>
     <h2>Расчёт стоимости и коммерческое предложение</h2>
     <p class="lead">Укажите параметры объекта. Справа сразу видно, как будет выглядеть модель, а готовое КП с логотипом ГРАНЬ можно скачать в PDF.</p>
     <div class="calc2">
@@ -789,7 +789,7 @@ body{background:var(--paper)}
         <div class="field"><label for="cArea">Площадь ОКС <span class="val tnum" id="vArea"></span></label>
           <div class="rangerow"><input type="range" id="cAreaR" min="0" max="100" value="45" aria-label="Площадь ОКС"><input type="number" id="cArea" min="200" max="400000" step="100" value="24000" aria-label="Площадь ОКС, м²"></div></div>
         <div class="cgrp" id="grpNV" style="--c:var(--vpm)">
-          <div class="cgrp-h"><i></i>НПМ и ВПМ</div>
+          <div class="cgrp-h"><i></i>Для всех моделей</div>
           <div class="field"><div class="lbl">Фасады</div>
             <div class="seg full" data-k="fac" role="group" aria-label="Сложность фасадов"><button type="button" data-v="0" aria-pressed="false">Лёгкие</button><button type="button" data-v="1" aria-pressed="true">Средние</button><button type="button" data-v="2" aria-pressed="false">Сложные</button></div></div>
           <div class="field"><div class="lbl">Благоустройство</div>
@@ -809,7 +809,7 @@ body{background:var(--paper)}
         <div class="res2" aria-live="polite">
           <div><div class="label" style="color:#9AA6B6">Ориентировочная стоимость</div><div class="tot" id="rTotal">—</div><div class="sub" id="rSub">—</div></div>
           <button class="btn btn-white" id="kpBtn">Скачать КП (PDF)</button>
-          <div class="lines" id="rLines"></div>
+          <p class="fine" style="grid-column:1/-1">Цена = площадь × тариф × коэффициент площади × фасады × благоустройство; для ЦИМ — дополнительно коэффициент BIM. Границы: до 50 000 м² — 1,25; от 50 000 — 1; от 100 000 — 0,9; от 200 000 — 0,85.</p><div class="lines" id="rLines"></div>
         </div>
       </div>
       <div class="kpbox">
@@ -945,6 +945,7 @@ body{background:var(--paper)}
 <script src="assets/reference-project.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
+const fmtMoney = n => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(n);
 const fmt = n => new Intl.NumberFormat('ru-RU').format(Math.round(n));
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1183,35 +1184,32 @@ let setMode = () => {};
   })(prev);
 })();
 
-/* ===================== ЦЕНЫ (заглушка: заменить формулами ГРАНЬ) ===================== */
+/* ===================== ЦЕНЫ: утверждённые тарифы ===================== */
 const PRICING = {
   models: {
-    npm: { name: 'НПМ — низкополигональная модель', base: 60000, perM2: 3 },
-    vpm: { name: 'ВПМ — высокополигональная модель', base: 100000, perM2: 6 },
-    cim: { name: 'ЦИМ — информационная модель IFC', base: 90000, perM2: 5 },
+    npm: { name: 'НПМ — низкополигональная модель', perM2: 13 },
+    vpm: { name: 'ВПМ — высокополигональная модель', perM2: 23 },
+    cim: { name: 'ЦИМ — информационная модель IFC', perM2: 55 },
   },
-  facade: [0.85, 1, 1.3],            // фасады лёгкие / средние / сложные (множитель для НПМ и ВПМ)
-  landscape: [30000, 60000, 120000], // благоустройство лёгкое / среднее / сложное, ₽ (для НПМ и ВПМ)
-  bimFactor: 0.85,                   // ЦИМ собираем из BIM-модели заказчика
-  bundleDiscount: { 2: 0.05, 3: 0.10 },
+  facade: [1, 1.05, 1.1], landscape: [1, 1.05, 1.1], bimFactor: .8,
   days: { npm: 5, vpm: 10, cim: 8, per10kM2: 1, review: 2, complexFacade: 2, bim: -2 },
 };
+function areaFactor(area) { return area < 50000 ? 1.25 : area < 100000 ? 1 : area < 200000 ? .9 : .85 }
 const FAC_N = ['лёгкие', 'средние', 'сложные'], LAND_N = ['лёгкое', 'среднее', 'сложное'];
 function calcPrice(p) {
   const sel = ['npm', 'vpm', 'cim'].filter(k => p.models[k]), nv = p.models.npm || p.models.vpm;
-  const lines = [], r1000 = v => Math.round(v / 1000) * 1000;
-  sel.forEach(k => {
-    const m = PRICING.models[k]; let sum = m.base + m.perM2 * p.area, name = m.name;
-    if (k !== 'cim') { sum *= PRICING.facade[p.fac]; name += `, фасады ${FAC_N[p.fac]}` }
-    else if (p.bim) { sum *= PRICING.bimFactor; name += ', из BIM-модели' }
-    lines.push({ key: k, name, sum: r1000(sum) });
+  const round = v => Math.round((v + Number.EPSILON) * 100) / 100;
+  const area = Math.max(0, Number(p.area) || 0), factor = areaFactor(area);
+  const lines = sel.map(k => {
+    const m = PRICING.models[k], bim = k === 'cim' && p.bim ? PRICING.bimFactor : 1;
+    const sum = round(area * m.perM2 * factor * PRICING.facade[p.fac] * PRICING.landscape[p.land] * bim);
+    const name = `${m.name} · ${m.perM2} ₽/м² × ${factor} × ${PRICING.facade[p.fac]} × ${PRICING.landscape[p.land]}` + (k === 'cim' ? ` × ${bim} (BIM)` : '');
+    return { key: k, name, sum };
   });
-  if (nv) lines.push({ key: 'land', name: `Благоустройство, ${LAND_N[p.land]}`, sum: PRICING.landscape[p.land] });
-  const sub = lines.reduce((s, l) => s + l.sum, 0), dRate = PRICING.bundleDiscount[sel.length] || 0, disc = r1000(sub * dRate);
-  const total = sub - disc;
+  const sub = round(lines.reduce((s, l) => s + l.sum, 0)), dRate = 0, disc = 0, total = sub;
   const D = PRICING.days; let days = 0;
   if (sel.length) days = Math.max(3, Math.max(...sel.map(k => D[k])) + Math.ceil(p.area / 10000) * D.per10kM2 + D.review + (nv && p.fac === 2 ? D.complexFacade : 0) + (p.models.cim && p.bim && !nv ? D.bim : 0));
-  return { sel, lines, sub, dRate, disc, total, days };
+  return { sel, lines, sub, dRate, disc, total, days, areaFactor: factor };
 }
 
 /* ===================== 3D: макеты проектов ===================== */
@@ -1814,11 +1812,11 @@ let calcViewer, lastCalc;
   function upd() {
     const p = params(), r = calcPrice(p); lastCalc = { p, r };
     $('#vArea').textContent = fmt(p.area) + ' м²';
-    $('#grpNV').hidden = !(p.models.npm || p.models.vpm); $('#grpC').hidden = !p.models.cim;
+    $('#grpNV').hidden = !r.sel.length; $('#grpC').hidden = !p.models.cim;
     if (!r.sel.length) { $('#rTotal').textContent = '—'; $('#rSub').textContent = 'Выберите хотя бы одну модель'; $('#rLines').innerHTML = '' }
     else {
-      $('#rTotal').textContent = fmt(r.total) + ' ₽'; $('#rSub').textContent = `Срок около ${r.days} рабочих дней · без НДС`;
-      $('#rLines').innerHTML = r.lines.map(l => `<div><span>${l.name}</span><b>${fmt(l.sum)} ₽</b></div>`).join('') + (r.disc ? `<div><span>Скидка за комплект, ${Math.round(r.dRate * 100)} %</span><b>−${fmt(r.disc)} ₽</b></div>` : '');
+      $('#rTotal').textContent = fmtMoney(r.total) + ' ₽'; $('#rSub').textContent = `Предварительный срок: ${r.days} раб. дней · без НДС`;
+      $('#rLines').innerHTML = r.lines.map(l => `<div><span>${l.name}</span><b>${fmtMoney(l.sum)} ₽</b></div>`).join('') + (r.disc ? `<div><span>Скидка за комплект, ${Math.round(r.dRate * 100)} %</span><b>−${fmtMoney(r.disc)} ₽</b></div>` : '');
     }
     const allow = r.sel.length ? r.sel : ['npm', 'vpm', 'cim'];
     if (!allow.includes(cv.mode)) cv.setMode(allow.includes('vpm') ? 'vpm' : allow[0]);
@@ -1873,15 +1871,15 @@ function kpHTML(c, img, meta) {
   <div style="font-size:12.5px;color:#626C7A">№ ${no} от ${date} · действует до ${until}</div>
   <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:22px;margin-top:20px">
     <div style="border-radius:12px;overflow:hidden;background:#E9EDF1;height:240px;border:1px solid #DDE1E7">${img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;display:block">` : ''}</div>
-    <table style="font-size:12.5px;border-collapse:collapse;align-self:start;width:100%">${meta.company ? row('Заказчик', meta.company) : ''}${meta.person ? row('Контактное лицо', meta.person) : ''}${meta.object ? row('Объект', meta.object) : ''}${row('Площадь ОКС', fmt(p.area) + ' м²')}${(p.models.npm || p.models.vpm) ? row('Фасады', FAC_N[p.fac]) + row('Благоустройство', LAND_N[p.land]) : ''}${p.models.cim ? row('BIM-модель', p.bim ? 'есть' : 'нет') : ''}</table>
+    <table style="font-size:12.5px;border-collapse:collapse;align-self:start;width:100%">${meta.company ? row('Заказчик', meta.company) : ''}${meta.person ? row('Контактное лицо', meta.person) : ''}${meta.object ? row('Объект', meta.object) : ''}${row('Площадь ОКС', fmt(p.area) + ' м²')}${r.sel.length ? row('Фасады', FAC_N[p.fac]) + row('Благоустройство', LAND_N[p.land]) : ''}${p.models.cim ? row('BIM-модель', p.bim ? 'есть' : 'нет') : ''}</table>
   </div>
   <table style="width:100%;border-collapse:collapse;margin-top:22px;font-size:12.5px">
     <thead><tr style="text-align:left;${mono}"><th style="padding:8px 0;border-bottom:1px solid #131820;font-weight:500">Работа</th><th style="padding:8px 0;border-bottom:1px solid #131820;font-weight:500">Состав</th><th style="padding:8px 0;border-bottom:1px solid #131820;text-align:right;font-weight:500">Стоимость</th></tr></thead>
-    <tbody>${r.lines.map(l => `<tr><td style="padding:10px 12px 10px 0;border-bottom:1px solid #DDE1E7;font-weight:600;width:33%">${l.name}</td><td style="padding:10px 12px 10px 0;border-bottom:1px solid #DDE1E7;color:#3A4250">${KP_SCOPE[l.key]}</td><td style="padding:10px 0;border-bottom:1px solid #DDE1E7;text-align:right;white-space:nowrap;font-family:'JetBrains Mono',monospace">${fmt(l.sum)} ₽</td></tr>`).join('')}
-    ${r.disc ? `<tr><td colspan="2" style="padding:10px 0;border-bottom:1px solid #DDE1E7">Скидка за комплект, ${Math.round(r.dRate * 100)} %</td><td style="padding:10px 0;border-bottom:1px solid #DDE1E7;text-align:right;color:#2E8B57;font-family:'JetBrains Mono',monospace">−${fmt(r.disc)} ₽</td></tr>` : ''}</tbody>
+    <tbody>${r.lines.map(l => `<tr><td style="padding:10px 12px 10px 0;border-bottom:1px solid #DDE1E7;font-weight:600;width:33%">${l.name}</td><td style="padding:10px 12px 10px 0;border-bottom:1px solid #DDE1E7;color:#3A4250">${KP_SCOPE[l.key]}</td><td style="padding:10px 0;border-bottom:1px solid #DDE1E7;text-align:right;white-space:nowrap;font-family:'JetBrains Mono',monospace">${fmtMoney(l.sum)} ₽</td></tr>`).join('')}
+    ${r.disc ? `<tr><td colspan="2" style="padding:10px 0;border-bottom:1px solid #DDE1E7">Скидка за комплект, ${Math.round(r.dRate * 100)} %</td><td style="padding:10px 0;border-bottom:1px solid #DDE1E7;text-align:right;color:#2E8B57;font-family:'JetBrains Mono',monospace">−${fmtMoney(r.disc)} ₽</td></tr>` : ''}</tbody>
   </table>
   <div style="display:flex;justify-content:space-between;align-items:center;background:#131820;color:#fff;border-radius:12px;padding:18px 22px;margin-top:18px;border-left:6px solid #1F4FBF">
-    <div><div style="${mono};color:#9AA6B6">Итого, без НДС</div><div style="font-family:Onest,Arial;font-size:30px;font-weight:600">${fmt(r.total)} ₽</div></div>
+    <div><div style="${mono};color:#9AA6B6">Итого, без НДС</div><div style="font-family:Onest,Arial;font-size:30px;font-weight:600">${fmtMoney(r.total)} ₽</div></div>
     <div style="text-align:right"><div style="${mono};color:#9AA6B6">Срок разработки</div><div style="font-family:Onest,Arial;font-size:22px;font-weight:600">${r.days} рабочих дней</div></div>
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;font-size:11.5px;line-height:1.5">
