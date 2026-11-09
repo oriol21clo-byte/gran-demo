@@ -814,7 +814,7 @@ body{background-image:none}
             <label class="mcheck" style="--c:var(--cim)"><input type="checkbox" id="cCIM" checked><b>ЦИМ</b><small>IFC</small></label>
           </div></div>
         <div class="field"><label for="cArea">Площадь ОКС <span class="val tnum" id="vArea"></span></label>
-          <div class="rangerow"><input type="range" id="cAreaR" min="0" max="100" value="45" aria-label="Площадь ОКС"><input type="number" id="cArea" min="200" max="400000" step="100" value="24000" aria-label="Площадь ОКС, м²"></div></div>
+          <div class="rangerow"><input type="range" id="cAreaR" min="0" max="100" value="45" aria-label="Площадь ОКС"><input type="number" id="cArea" min="5000" max="400000" step="100" value="24000" aria-label="Площадь ОКС, м²"></div></div>
         <div class="cgrp" id="grpNV" style="--c:var(--vpm)">
           <div class="cgrp-h"><i></i>Для всех моделей</div>
           <div class="field"><div class="lbl">Фасады</div>
@@ -971,6 +971,7 @@ body{background-image:none}
 <script src="assets/gran-visual.js"></script>
 <script src="assets/reference-project.js"></script>
 <script src="assets/ryabinovaya-project.js"></script>
+<script src="assets/photo-tower-project.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 const fmtMoney = n => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(n);
@@ -1042,7 +1043,10 @@ let setMode = () => {};
 
   const ctx=new THREE.Group(), gNPM=new THREE.Group(), gVPM=new THREE.Group(), gCIM=new THREE.Group(), cars=new THREE.Group();
   scene.add(ctx,gNPM,gVPM,gCIM); ctx.add(cars);
-  const contextGround=M(0xDCE1E6,{roughness:1});ctx.add(plane(800,800,contextGround,0,0,0));
+  const contextGround=M(0xDCE1E6,{roughness:1});
+  const contextFlat=new THREE.MeshBasicMaterial({color:new THREE.Color(GranVisual.presets.vpm.background).convertSRGBToLinear(),toneMapped:false,fog:false});
+  const contextPlane=plane(800,800,contextGround,0,0,0);contextPlane.name='context-ground';ctx.add(contextPlane);
+  const contextShadow=plane(800,800,new THREE.ShadowMaterial({opacity:.16,depthWrite:false}),0,0,.006);contextShadow.name='context-ground-shadows';ctx.add(contextShadow);
   const nMat=M(0xF0F3F6,{roughness:.95});
   neighbors.forEach(([x,z,w,d,h])=>{const m=box(w,h,d,nMat,x,h/2,z);m.castShadow=false;m.receiveShadow=true;ctx.add(m);
     const e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0xB7BEC7,transparent:true,opacity:.18}));e.position.copy(m.position);ctx.add(e)});
@@ -1151,7 +1155,7 @@ let setMode = () => {};
 
   let mode='vpm', growT=1, growG=null;
   const baseSet=setMode;
-  setMode=m=>{baseSet(m);mode=m;GranVisual.apply(lighting,m);contextGround.color.set(m==='vpm'?0xC5C7C6:0xDCE1E6).convertSRGBToLinear();if(m==='cim')heroBim();gNPM.visible=m==='npm';gVPM.visible=m==='vpm';gCIM.visible=m==='cim';cars.visible=m==='vpm';siteLine.visible=m!=='cim';
+  setMode=m=>{baseSet(m);mode=m;GranVisual.apply(lighting,m);contextPlane.material=m==='vpm'?contextFlat:contextGround;contextShadow.visible=m==='vpm';if(m==='cim')heroBim();gNPM.visible=m==='npm';gVPM.visible=m==='vpm';gCIM.visible=m==='cim';cars.visible=m==='vpm';siteLine.visible=m!=='cim';
     renderStats(m);hideTip();$('#vinfo').style.display='none';clearSel();growG=m==='npm'?gNPM:m==='vpm'?gVPM:gCIM;growT=0};
   // BIM строится при первом открытии ЦИМ той же функцией, что и в калькуляторе; высота этажа 3,2 м приводится к 3 м этой сцены
   let bimG=null;
@@ -1282,6 +1286,7 @@ function mats() {
 function buildReferenceProject(spec) { return GranReference.build(spec,mats()); }
 
 function buildProject(spec) {
+  if (spec.reference === 'brown-white-tower') return GranPhotoTower.build();
   if (spec.reference === 'ryabinovaya') return GranRyabinovaya.build();
   if (spec.reference === 'six-tower-courtyard') return buildReferenceProject(spec);
   const M = mats(), FH = 3.2, root = new THREE.Group(), g = { npm: new THREE.Group(), vpm: new THREE.Group(), cim: new THREE.Group() }; root.add(g.npm, g.vpm, g.cim);
@@ -1751,6 +1756,7 @@ function bindModes(container, viewer) {
 }
 
 /* ===================== НАШИ ПРОЕКТЫ ===================== */
+const PROJECT_OBJECT_NAMES = ['Ав******ая', 'Баб*****ая', 'Авто*****ая', 'Ряб*****ая'];
 const PROJECTS = [
   { title: 'Жилой комплекс с внутренним двором', tag: 'ВПМ · по изображениям', facts: [['6', 'корпусов'], ['Двор', 'благоустройство'], ['3D', 'реконструкция']],
     spec: { reference: 'six-tower-courtyard', site: { w:132,d:122 }, buildings: [
@@ -1761,11 +1767,8 @@ const PROJECTS = [
       {x:43,z:-23,w:23,d:33,f:24,finish:'grey',tiers:[{w:23,d:33,f:13},{w:20,d:29,f:11,x:0,z:-2}]},
       {x:0,z:-29,w:23,d:22,f:21,finish:'gold'}
     ] } },
-  { title: 'Жилой дом с башней', tag: 'ВПМ · концепция', facts: [['11 570', 'м² СПП'], ['83 м', 'высота'], ['0,33', 'га участок']],
-    spec: { site: { w: 60, d: 56 }, trees: 16, seed: 8, paths: [[0, 22, 52, 2.2]], buildings: [
-      { x: 0, z: 2, w: 42, d: 30, f: 2, kind: 'podium', mat: 'terra' },
-      { x: -7, z: 2, w: 24, d: 19, f: 19, y0: 6.4, kind: 'round' },
-      { x: 11, z: 2, w: 12, d: 20, f: 20, y0: 6.4, kind: 'res', mat: 'dark' }] } },
+  { title: 'Объект: Баб*****ая · реконструкция по фотографиям', tag: 'ВПМ · по фотографиям', facts: [['По фото', 'реконструкция'], ['Фасады', 'и благоустройство'], ['ВПМ', 'архитектура']],
+    spec: { reference: 'brown-white-tower' } },
   { title: 'Жилой комплекс', tag: 'ВПМ · архитектура', facts: [['104 400', 'м² СПП'], ['100 м', 'высота'], ['2', 'участка']],
     spec: (() => {
       const blk = (cz, s) => [
@@ -1781,12 +1784,12 @@ const PROJECTS = [
 let modalViewer = null;
 (function () {
   const list = $('#projList');
-  list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="ov tr cap">${p.tag}</div><div class="prj-overlay">${p.facts.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div></div><div class="body"><dl class="nda"><div><dt>Адрес объекта</dt><dd>NDA</dd></div><div><dt>Застройщик</dt><dd>NDA</dd></div></dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
+  list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="ov tr cap">${p.tag}</div><div class="prj-overlay">${p.facts.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div></div><div class="body"><dl class="nda"><div><dt>Объект:</dt><dd>${PROJECT_OBJECT_NAMES[i]}</dd></div></dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
   $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: true, modes: ['vpm'] }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
   list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openProject(+b.dataset.open) });
   const modal = $('#modal'); let lastFocus = null;
   function openProject(i) {
-    lastFocus = document.activeElement; modal.hidden = false; document.body.style.overflow = 'hidden'; $('#mTitle').textContent = (i === 0 || i === 3) ? (i === 3 ? 'Рябиновая · реконструкция по гостевому виду, размеры ориентировочные' : 'Реконструкция по изображениям · размеры ориентировочные') : 'Проект · ' + PROJECTS[i].tag;
+    lastFocus = document.activeElement; modal.hidden = false; document.body.style.overflow = 'hidden'; $('#mTitle').textContent = i === 1 ? 'Объект: '+PROJECT_OBJECT_NAMES[i]+' · реконструкция по фотографиям' : (i === 0 || i === 3) ? (i === 3 ? 'Рябиновая · реконструкция по гостевому виду, размеры ориентировочные' : 'Реконструкция по изображениям · размеры ориентировочные') : 'Проект · ' + PROJECTS[i].tag;
     if (!modalViewer) { modalViewer = new Viewer($('#modalStage'), { interactive: true, zoom: true, auto: true, modes: ['vpm'] }) }
     modalViewer.mode = 'vpm'; modalViewer._placed = false; modalViewer.setProject(PROJECTS[i].spec);
     $$('[data-view]', modal).forEach(x => x.setAttribute('aria-pressed', String(x.dataset.view === 'iso'))); $('#mClose').focus();
@@ -1802,7 +1805,7 @@ let calcViewer, lastCalc;
 (function () {
   const cv = calcViewer = new Viewer($('#calcStage'), { interactive: !isTouch, zoom: false, auto: true, preserve: true });
   const modes = bindModes($('#calcStage'), cv);
-  const aR = $('#cAreaR'), aN = $('#cArea'), MIN = 200, MAX = 400000;
+  const aR = $('#cAreaR'), aN = $('#cArea'), MIN = 5000, MAX = 400000;
   const toA = v => { const a = MIN * Math.pow(MAX / MIN, v / 100); return a < 2000 ? Math.round(a / 50) * 50 : a < 20000 ? Math.round(a / 100) * 100 : Math.round(a / 1000) * 1000 };
   const toP = a => Math.round(100 * Math.log(a / MIN) / Math.log(MAX / MIN));
   aR.value = toP(+aN.value);
@@ -1835,7 +1838,7 @@ let calcViewer, lastCalc;
   let tmr, pend, lastKey = '';
   function upd() {
     const p = params(), r = calcPrice(p); lastCalc = { p, r };
-    $('#vArea').textContent = fmt(p.area) + ' м²';
+    $('#vArea').textContent = fmt(p.area) + ' м²';aR.setAttribute('aria-valuetext',fmt(p.area)+' м²');
     $('#grpNV').hidden = !r.sel.length; $('#grpC').hidden = !p.models.cim;
     if (!r.sel.length) { $('#rTotal').textContent = '—'; $('#rSub').textContent = 'Выберите хотя бы одну модель'; $('#rLines').innerHTML = '' }
     else {
