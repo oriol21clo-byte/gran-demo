@@ -1850,9 +1850,8 @@ let calcViewer, lastCalc;
   $$('#calcForm .seg').forEach(seg => seg.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return; const k = seg.dataset.k;
     st[k] = +b.dataset.v; $$('button', seg).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    upd();
-    if (k === 'bim' && $('#cCIM').checked) show('cim');
-    else if (k !== 'bim' && cv.mode === 'cim') { if ($('#cVPM').checked) show('vpm'); else if ($('#cNPM').checked) show('npm') }
+    upd(k === 'bim');
+    if (k !== 'bim' && cv.mode === 'cim') { if ($('#cVPM').checked) show('vpm'); else if ($('#cNPM').checked) show('npm') }
   }));
   const params = () => ({ area: +aN.value, fac: st.fac, land: st.land, bim: !!st.bim, models: { npm: $('#cNPM').checked, vpm: $('#cVPM').checked, cim: $('#cCIM').checked } });
   // Макет по площади: число корпусов и этажность подбираются автоматически
@@ -1868,7 +1867,7 @@ let calcViewer, lastCalc;
     return { site: { w: xb - xa, d: zb - za, x: (xa + xb) / 2, z: (za + zb) / 2 }, seed: 4, buildings: B, facade: [0, 2, 3][p.fac], facCalc: true, land: p.land, bim: !!p.models.cim };
   }
   let tmr, pend, lastKey = '';
-  function upd() {
+  function upd(priceOnly) {
     const p = params(), r = calcPrice(p); lastCalc = { p, r };
     $('#vArea').textContent = fmt(p.area) + ' м²';aR.setAttribute('aria-valuetext',fmt(p.area)+' м²');
     $('#grpNV').hidden = !r.sel.length; $('#grpC').hidden = !p.models.cim;
@@ -1877,6 +1876,7 @@ let calcViewer, lastCalc;
       $('#rTotal').textContent = fmtMoney(r.total) + ' ₽'; $('#rSub').textContent = `Предварительный срок: ${r.days} раб. дней · без НДС`;
       $('#rLines').innerHTML = r.lines.map(l => `<div><span>${l.name}</span><b>${fmtMoney(l.sum)} ₽</b></div>`).join('') + (r.disc ? `<div><span>Скидка за комплект, ${Math.round(r.dRate * 100)} %</span><b>−${fmtMoney(r.disc)} ₽</b></div>` : '');
     }
+    if(priceOnly===true)return;
     const allow = r.sel.length ? r.sel : ['npm', 'vpm', 'cim'];
     if (!allow.includes(cv.mode)) cv.setMode(allow.includes('vpm') ? 'vpm' : allow[0]);
     modes && modes.sync(allow);
