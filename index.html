@@ -677,7 +677,7 @@ body{background-image:none}
 #why-us .why-panel{padding:30px 0}
 #why-us .why-heading{margin:12px 0 28px;align-items:center}
 #why-us .why-heading h2{margin:0}
-#why-us .why-grid{grid-template-columns:1.2fr 1fr 1fr;gap:24px;align-items:stretch}
+#why-us .why-grid{grid-template-columns:1.2fr repeat(3,minmax(0,1fr));gap:20px;align-items:stretch}
 #why-us .why-metric,#why-us .why-metric:first-child{padding:24px;gap:12px;justify-content:center;border:0}
 #why-us .why-metric+.why-metric{border:0}
 #why-us .why-metric:first-child{background:#1e3151;border-radius:var(--r2);color:white}
@@ -687,6 +687,7 @@ body{background-image:none}
 #why-us .why-metric strong{font-size:46px}
 #why-us .why-metric strong small{display:inline;font-size:14px}
 #why-us .why-foot{margin-top:18px}
+@media(min-width:761px) and (max-width:1000px){#why-us .why-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){:root{--section-space:36px;--card-gap:16px}#why-us .why-heading{display:block}#why-us .why-heading>p{margin-top:14px}#why-us .why-grid{grid-template-columns:1fr;gap:12px}#why-us .why-metric,#why-us .why-metric:first-child{padding:22px}#why-us .why-metric+.why-metric{border-top:1px solid var(--line)}#why-us .why-metric strong{font-size:40px}#why-us .why-metric:first-child strong{font-size:58px}}
 </style></head>
 <body>
@@ -796,12 +797,12 @@ body{background-image:none}
 
 <section id="why-us" aria-labelledby="why-title"><div class="wrap"><div class="why-panel">
 <div class="label">Команда / Опыт</div><div class="why-heading"><h2 id="why-title">Почему выбирают<br>«ГРАНЬ»</h2><p>Опыт, который помогает<br>проходить согласование.</p></div>
-<div class="why-grid"><div class="why-metric"><span class="why-index">01 / Практика</span><strong>3<span>+</span></strong><span>года опыта специалистов<br>в сфере АГР</span></div><div class="why-metric"><span class="why-index">02 / Масштаб</span><strong>3,5 <small>млн м²</small></strong><span>согласованных<br>площадей в ДГП</span></div><div class="why-metric"><span class="why-index">03 / Экспертиза</span><strong>20</strong><span>IFC-моделей, включая<br>знаковые объекты Москвы</span></div></div>
+<div class="why-grid"><div class="why-metric"><span class="why-index">01 / Практика</span><strong>3<span>+</span></strong><span>года опыта специалистов<br>в сфере АГР</span></div><div class="why-metric"><span class="why-index">02 / Масштаб</span><strong>3,5 <small>млн м²</small></strong><span>согласованных<br>площадей в ДГП</span></div><div class="why-metric"><span class="why-index">03 / Модели</span><strong>80<span>+</span></strong><span>НПМ и ВПМ<br>моделей</span></div><div class="why-metric"><span class="why-index">04 / Экспертиза</span><strong>20<span>+</span></strong><span>IFC-моделей, включая<br>знаковые объекты Москвы</span></div></div>
 <p class="why-foot">Совокупный опыт специалистов команды.</p></div></div></section>
 
 <section id="calc">
   <div class="wrap">
-    <div class="label">Стоимость <span class="demo-tag">13 / 23 / 55 ₽ за м²</span></div>
+    <div class="label">Стоимость</div>
     <h2>Расчёт стоимости и коммерческое предложение</h2>
     <p class="lead">Укажите параметры объекта. Справа сразу видно, как будет выглядеть модель, а готовое КП с логотипом ГРАНЬ можно скачать в PDF.</p>
     <div class="calc2">
@@ -1214,9 +1215,9 @@ let setMode = () => {};
 /* ===================== ЦЕНЫ: утверждённые тарифы ===================== */
 const PRICING = {
   models: {
-    npm: { name: 'НПМ — низкополигональная модель', perM2: 13 },
-    vpm: { name: 'ВПМ — высокополигональная модель', perM2: 23 },
-    cim: { name: 'ЦИМ — информационная модель IFC', perM2: 55 },
+    npm: { name: 'НПМ — низкополигональная модель', perM2: 11 },
+    vpm: { name: 'ВПМ — высокополигональная модель', perM2: 21 },
+    cim: { name: 'ЦИМ — информационная модель IFC', perM2: 35 },
   },
   facade: [1, 1.05, 1.1], landscape: [1, 1.05, 1.1], bimFactor: .8,
   days: { npm: 5, vpm: 10, cim: 8, per10kM2: 1, review: 2, complexFacade: 2, bim: -2 },
