@@ -24,6 +24,12 @@ async function check(){
   assert(cv.p.g[cv.mode].visible,'detail model restored after '+area);
   cv.p.root.traverse(o=>{if(o.geometry)assert(Array.from(o.geometry.attributes.position.array).every(Number.isFinite),'finite geometry after '+area)});
  }
+ // BIM availability changes commercial totals without rebuilding or switching the preview.
+ for(const mode of ['npm','vpm','cim']){cv.setMode(mode);const model=cv.p,camera=cv.cam.position.toArray(),zoom=cv.cam.zoom,price=get().lastCalc.r.total;
+  d.querySelector('[data-k="bim"] [data-v="1"]').click();await new Promise(r=>setTimeout(r,90));
+  assert(get().lastCalc.r.total<price,'BIM discount changes price');assert.strictEqual(cv.p,model,'no rebuild for BIM');assert.equal(cv.mode,mode);assert.deepEqual(cv.cam.position.toArray(),camera);assert.equal(cv.cam.zoom,zoom);
+  d.querySelector('[data-k="bim"] [data-v="0"]').click();await new Promise(r=>setTimeout(r,90));assert.equal(get().lastCalc.r.total,price);assert.strictEqual(cv.p,model);assert.equal(cv.mode,mode);
+ }
  // Orthographic fitting must preserve scale through aspect changes and user zoom.
  const camera=new THREE.OrthographicCamera(-1,1,1,-1,.5,2000);
  w.GranVisual.project(camera,2,200);const height=camera.top-camera.bottom;
