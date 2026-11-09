@@ -36,10 +36,11 @@
   solid(whitePlan,.12,whiteTop,M.white,1.15,.10);
   const brownPlan=[[0,-14],[14,-14],[14,13],[0,13]];
   function windows(plan,floors,start,brownFacade){plan.forEach((a,i)=>{const b=plan[(i+1)%plan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=dz/L,nz=-dx/L,angle=-Math.atan2(dz,dx),margin=brownFacade?.7:1.25,n=Math.max(1,Math.floor((L-2*margin)/(brownFacade?2.25:2.7))),pitch=(L-2*margin)/n;
-   for(let j=0;j<n;j++){const t=(margin+(j+.5)*pitch)/L,x=a[0]+dx*t,z=a[1]+dz*t,ww=pitch-(brownFacade?.5:.65);
+   for(let j=0;j<n;j++){const t=(margin+(j+.5)*pitch)/L,x=a[0]+dx*t,z=a[1]+dz*t,ww=pitch-(brownFacade?.95:.65);
     for(let f=0;f<floors;f++){const y=start+f*FH+FH/2,gm=glass[(j+Math.floor(f/3)+i)%glass.length];box(gm,x+nx*.10,y,z+nz*.10,ww,FH-.28,.14,angle);
      for(const k of [-1,1]){const px=x+dx/L*k*ww/2,pz=z+dz/L*k*ww/2;box(M.frame,px+nx*.16,y,pz+nz*.16,.055,FH-.20,.20,angle);box(M.frame,x+nx*.16,y+k*(FH-.28)/2,z+nz*.16,ww+.10,.055,.20,angle);}
-     box(M.frame,x+nx*.18,y-.22,z+nz*.18,ww,.055,.22,angle);box(M.frame,x+nx*.18,y+.72,z+nz*.18,ww,.035,.20,angle);
+     box(M.frame,x+nx*.18,y-.22,z+nz*.18,ww,.055,.22,angle);if(!brownFacade)box(M.frame,x+nx*.18,y+.72,z+nz*.18,ww,.035,.20,angle);
+     if(brownFacade){box(M.brown,x+nx*.24,y-FH/2+.30,z+nz*.24,ww,.50,.20,angle);}
      if(!brownFacade){box(M.white,x+nx*.25,y-FH/2+.06,z+nz*.25,pitch,.16,.46,angle);
       for(const side of [-1,1]){const px=x+dx/L*side*(ww/2+.19),pz=z+dz/L*side*(ww/2+.19);box(M.white,px+nx*.24,y,pz+nz*.24,.33,FH,.55,angle);}
      }

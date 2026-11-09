@@ -1004,7 +1004,7 @@ const MODE_DESC = {
 // Bound pixel and shadow budgets for the multiple simultaneous 3D views.
 function granRenderScale(w,h,preview){
   const small=matchMedia('(max-width:760px)').matches;
-  const desired=small?1.5:1.75;
+  const desired=small?1.75:2;
   return Math.max(1,Math.min(desired,Math.sqrt((preview?1400000:2600000)/Math.max(1,w*h))));
 }
 let setMode = () => {};
@@ -1017,7 +1017,7 @@ let setMode = () => {};
   setMode = m => {$$('.tab',wrap).forEach(t=>t.setAttribute('aria-pressed',String(t.dataset.m===m)));renderDesc(m);wrap.dataset.mode=m};
   if(!window.THREE){$('#vstats').innerHTML='<div class="row"><span>Интерактивный просмотр не загрузился. Показан статичный вид</span></div>';return}
   let renderer;
-  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true});if(!renderer.getContext())throw 0}catch(e){$('#vstats').innerHTML='<div class="row"><span>WebGL недоступен. Показан статичный вид</span></div>';return}
+  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});if(!renderer.getContext())throw 0}catch(e){$('#vstats').innerHTML='<div class="row"><span>WebGL недоступен. Показан статичный вид</span></div>';return}
   renderer.setPixelRatio(1);
   renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
@@ -1170,7 +1170,7 @@ let setMode = () => {};
 
   let mode='vpm', growT=1, growG=null;
   const baseSet=setMode;
-  setMode=m=>{baseSet(m);mode=m;GranVisual.apply(lighting,m);contextPlane.material=m==='vpm'?contextFlat:contextGround;contextShadow.visible=m==='vpm';if(m==='cim')heroBim();gNPM.visible=m==='npm';gVPM.visible=m==='vpm';gCIM.visible=m==='cim';cars.visible=m==='vpm';siteLine.visible=m!=='cim';
+  setMode=m=>{baseSet(m);mode=m;GranVisual.apply(lighting,m);contextPlane.material=contextGround;contextGround.color.setHex(m==='vpm'?0xbfc1c0:0xDCE1E6).convertSRGBToLinear();contextShadow.visible=false;if(m==='cim')heroBim();gNPM.visible=m==='npm';gVPM.visible=m==='vpm';gCIM.visible=m==='cim';cars.visible=m==='vpm';siteLine.visible=m!=='cim';
     renderStats(m);hideTip();$('#vinfo').style.display='none';clearSel();growG=m==='npm'?gNPM:m==='vpm'?gVPM:gCIM;growT=0};
   // BIM строится при первом открытии ЦИМ той же функцией, что и в калькуляторе; высота этажа 3,2 м приводится к 3 м этой сцены
   let bimG=null;
@@ -1222,7 +1222,7 @@ let setMode = () => {};
   let visible=true; if(window.IntersectionObserver)new IntersectionObserver(es=>{visible=es[0].isIntersecting}).observe(wrap);
   let prev=performance.now(), frames=0;
   (function loop(now){requestAnimationFrame(loop);const dt=Math.min(50,now-prev);prev=now;
-    if(!visible&&frames>5)return;
+    if(document.hidden||(!visible&&frames>5))return;
     if(!drag&&now-lastAct>2500)theta+=dt*.000035;
     radius+=(radiusT-radius)*(1-Math.exp(-dt/140));
     if(growG&&growT<1){growT=Math.min(1,growT+dt/650);growG.scale.y=Math.max(.001,1-Math.pow(1-growT,3))}
@@ -1655,7 +1655,7 @@ class Viewer {
     this.el = el; this.o = Object.assign({ interactive: true, zoom: true, auto: true, preserve: false, modes: ['npm','vpm','cim'] }, o); this.mode = 'vpm';
     if (!HAS3D) { el.insertAdjacentHTML('beforeend', '<div class="nogl">Для 3D-просмотра нужен интернет и браузер с поддержкой WebGL</div>'); this.dead = true; return }
     const c = this.canvas = document.createElement('canvas'); el.prepend(c);
-    try { this.r = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: this.o.preserve }) } catch (e) { el.insertAdjacentHTML('beforeend', '<div class="nogl">WebGL недоступен в этом браузере</div>'); this.dead = true; return }
+    try { this.r = new THREE.WebGLRenderer({ canvas: c, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: this.o.preserve }) } catch (e) { el.insertAdjacentHTML('beforeend', '<div class="nogl">WebGL недоступен в этом браузере</div>'); this.dead = true; return }
     const r = this.r; r.setPixelRatio(1); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.12;
     const s = this.scene = new THREE.Scene(); s.background = new THREE.Color(0xE9EDF1);
     this.lighting=GranVisual.create(s,r,!this.o.interactive||matchMedia('(max-width:760px)').matches);
@@ -1671,7 +1671,7 @@ class Viewer {
     const rs = () => { const w = c.clientWidth || el.clientWidth, h = c.clientHeight || el.clientHeight; if (!w || !h) return; r.setPixelRatio(granRenderScale(w,h,!this.o.interactive)); r.setSize(w, h, false); GranVisual.project(this.cam,w/h,this.viewDistance||this.dist||235); this.dirty = true };
     if ('ResizeObserver' in window) new ResizeObserver(rs).observe(el); addEventListener('resize', rs); rs();
     let prev = performance.now();
-    const loop = now => { requestAnimationFrame(loop); const dt = Math.min(50, now - prev); prev = now; if (!this.visible || (!this.p && !this.lv)) return; this.tick(dt); if (this.dirty) { this.dirty = false; r.render(s, this.cam) } };
+    const loop = now => { requestAnimationFrame(loop); const dt = Math.min(50, now - prev); prev = now; if (document.hidden || !this.visible || (!this.p && !this.lv)) return; this.tick(dt); if (this.dirty) { this.dirty = false; r.render(s, this.cam) } };
     requestAnimationFrame(loop);
   }
   setProject(spec, keepView) {
@@ -1774,7 +1774,7 @@ function bindModes(container, viewer) {
 /* ===================== НАШИ ПРОЕКТЫ ===================== */
 const PROJECT_OBJECT_NAMES = ['Ав******ая', 'Баб*****ая', 'Авто*****ая', 'Ряб*****ая'];
 const PROJECTS = [
-  { title: 'Жилой комплекс с внутренним двором', tag: 'ВПМ · по изображениям', facts: [['—', 'СПП в ГНС, м²'], ['—', 'Высота, м'], ['—', 'Участок, га']],
+  { title: 'Многоквартирные дома со встроенно-пристроенными помещениями и подземной автостоянкой', address: 'ул. Ав***ая', tag: 'ВПМ · по изображениям', facts: [['71 136', 'СПП в ГНС, м²'], ['—', 'Высота, м'], ['—', 'Участок, га']],
     spec: { reference: 'six-tower-courtyard', site: { w:132,d:122 }, buildings: [
       {x:-41,z:-28,w:25,d:25,f:27,finish:'white',tiers:[{w:25,d:25,f:9},{w:23,d:24,f:5,x:1},{w:20,d:22,f:4,x:2,z:-1},{w:17,d:20,f:4,x:2,z:-2},{w:14,d:18,f:5,x:2,z:-3}]},
       {x:-42,z:9,w:21,d:20,f:19,finish:'red'},
