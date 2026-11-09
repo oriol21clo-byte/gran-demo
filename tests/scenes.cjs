@@ -3,13 +3,14 @@ const html=fs.readFileSync('index.html','utf8'),dom=new JSDOM(html,{url:'http://
 const native2d={createLinearGradient:()=>({addColorStop(){}}),fillRect(){}};
 w.HTMLCanvasElement.prototype.getContext=()=>native2d;w.HTMLCanvasElement.prototype.setPointerCapture=function(){};
 w.matchMedia=()=>({matches:false});w.IntersectionObserver=class{observe(){} disconnect(){}};w.ResizeObserver=class{observe(){} disconnect(){}};const animationCallbacks=[];w.requestAnimationFrame=cb=>{animationCallbacks.push(cb);return 0};w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
-class Renderer{constructor(o){this.domElement=o.canvas;this.shadowMap={};renderers.push(this)}getContext(){return {}}setPixelRatio(){}setSize(){}render(s,c){s.updateMatrixWorld(true);c.updateMatrixWorld(true);this.scene=s;this.camera=c}}
+class Renderer{constructor(o){this.domElement=o.canvas;this.shadowMap={};renderers.push(this)}getContext(){return {}}setPixelRatio(){}setSize(){}render(s,c){this.draws=(this.draws||0)+1;s.updateMatrixWorld(true);c.updateMatrixWorld(true);this.scene=s;this.camera=c}}
 THREE.WebGLRenderer=Renderer;w.THREE=THREE;
 for(const p of ['assets/gran-visual.js','assets/reference-project.js','assets/ryabinovaya-project.js','assets/photo-tower-project.js'])w.eval(fs.readFileSync(p,'utf8'));
 const errors=[];w.addEventListener('error',e=>errors.push(String(e.error)));
 for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){let code=match[1];if(!code.trim())continue;if(code.includes('let calcViewer'))code+='\nwindow.__check={get:()=>({calcViewer,modalViewer,lastCalc,PROJECTS,buildProject,calcPrice,mats,setMode})};';w.eval(code)}
 const get=()=>w.__check.get();
 function check(){
+ const initialFrames=animationCallbacks.slice();
  const heroFrame=animationCallbacks[0], hc=renderers[0].camera;let clock=w.performance.now()+4000;heroFrame(clock);
  const angle=()=>Math.atan2(hc.position.x,hc.position.z-2);const start=angle();for(let i=0;i<60;i++)heroFrame(clock+=1000/60);const at60=angle();for(let i=0;i<120;i++)heroFrame(clock+=1000/120);const at120=angle();assert(Math.abs((at60-start)-.035)<1e-6);assert(Math.abs((at120-at60)-.035)<1e-6,'rotation speed independent of 60/120 Hz');
  const cv=get().calcViewer;assert(cv.p,'calculator geometry built');if(cv.lv)cv.lv.grp.visible=false;
@@ -25,6 +26,13 @@ function check(){
  cv.cam.zoom=2;cv.view('top');assert.equal(cv.cam.zoom,1,'view presets restore framing');cv.anim=null;
  for(const mode of ['npm','vpm','cim']){cv.setMode(mode);assert.equal(cv.lighting.mode,mode);assert.equal(cv.r.shadowMap.enabled,mode!=='cim');assert.equal(Object.entries(cv.p.g).filter(([k,v])=>v.visible).map(([k])=>k).join(),mode)}
  for(let i=0;i<4;i++){d.querySelector(`[data-open="${i}"]`).click();const mv=get().modalViewer;assert.equal(mv.o.modes.join(),'vpm');mv.setMode('npm');assert.equal(mv.mode,'vpm');assert(mv.p.g.vpm.visible);d.querySelector('#mClose').click()}
+ // Opening a full model must stop all background renderers without losing the active view.
+ const before=renderers.slice(0,6).map(r=>r.draws||0);d.querySelector('[data-open="1"]').click();
+ const modalFrame=animationCallbacks.at(-1);initialFrames.forEach(cb=>cb(clock+=8.33));assert.deepEqual(renderers.slice(0,6).map(r=>r.draws||0),before,'background viewers pause in modal');
+ const active=get().modalViewer;const count=active.r.draws||0;modalFrame(clock+=8.33);assert((active.r.draws||0)>count,'active modal still renders');
+ active.p.root.traverse(o=>assert.equal(o.matrixAutoUpdate,false,'static model transforms cached'));
+ assert.equal(active.projectGround.material.color.getHex(),renderers[0].scene.getObjectByName('context-ground').material.color.getHex(),'shared lit ground colour');
+ d.querySelector('#mClose').click();
  // Hero selection still resolves actual floor and building metadata on the CPU.
  const hero=renderers[0];d.querySelector('#viewer canvas').getBoundingClientRect=()=>({left:0,top:0,width:600,height:600});get().setMode('cim');hero.scene.updateMatrixWorld(true);hero.camera.updateMatrixWorld(true);
  const pt=new THREE.Vector3(-13,31.5,-.5).project(hero.camera);const event=new w.MouseEvent('pointerup',{clientX:(pt.x+1)*300,clientY:(1-pt.y)*300,bubbles:true});d.querySelector('#viewer canvas').dispatchEvent(event);
