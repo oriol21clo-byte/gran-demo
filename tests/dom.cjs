@@ -5,7 +5,8 @@ w.matchMedia=()=>({matches:false,addListener(){},addEventListener(){}});w.Inters
 w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLCanvasElement.prototype.getContext=()=>null;
 const unexpected=[];w.addEventListener('error',e=>unexpected.push(String(e.error)));w.console.error=()=>{};w.console.warn=()=>{};
 for(const code of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){if(code[1].trim())w.eval(code[1]);}
-const d=w.document;assert.equal(d.querySelectorAll('#projList .prj').length,4);
+const d=w.document;assert.equal(d.querySelectorAll('#why-us .why-metric').length,4);assert.equal(d.querySelectorAll('#why-us .why-metric strong')[2].textContent,'80+');assert.equal(d.querySelectorAll('#why-us .why-metric strong')[3].textContent,'20+');assert(!d.querySelector('#calc > .wrap > .label .demo-tag'));
+assert.equal(d.querySelectorAll('#projList .prj').length,4);
 assert(!d.querySelector('#modal [data-modes]'));assert.equal(d.querySelectorAll('#calcStage [data-m]').length,3);
 d.querySelector('[data-open="0"]').click();assert.equal(d.querySelector('#modal').hidden,false);assert(d.querySelector('#mTitle').textContent.includes('Реконструкция'));d.querySelector('#mClose').click();assert(d.querySelector('#modal').hidden);
 const read=()=>d.querySelector('#rTotal').textContent;
