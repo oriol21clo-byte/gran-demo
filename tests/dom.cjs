@@ -7,11 +7,14 @@ const unexpected=[];w.addEventListener('error',e=>unexpected.push(String(e.error
 for(const code of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){if(code[1].trim())w.eval(code[1]);}
 const d=w.document;assert.equal(d.querySelectorAll('#why-us .why-metric').length,4);assert.equal(d.querySelectorAll('#why-us .why-metric strong')[2].textContent,'80+');assert.equal(d.querySelectorAll('#why-us .why-metric strong')[3].textContent,'20+');assert(!d.querySelector('#calc > .wrap > .label .demo-tag'));
 assert.equal(d.querySelectorAll('#projList .prj').length,4);
+assert.deepEqual([...d.querySelectorAll('#projList .nda dd')].map(e=>e.textContent),['Ав******ая','Баб*****ая','Авто*****ая','Ряб*****ая']);assert(!d.querySelector('#projList').textContent.includes('NDA'));
+const areaField=d.querySelector('#cArea'),areaSlider=d.querySelector('#cAreaR');assert.equal(areaField.min,'5000');areaField.value=100;areaField.dispatchEvent(new w.Event('change',{bubbles:true}));assert.equal(areaField.value,'5000');assert.equal(+areaSlider.value,0);areaSlider.value=0;areaSlider.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(areaField.value,'5000');assert(areaSlider.getAttribute('aria-valuetext').includes('5'));areaSlider.value=100;areaSlider.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(areaField.value,'400000');
+
 assert(!d.querySelector('#modal [data-modes]'));assert.equal(d.querySelectorAll('#calcStage [data-m]').length,3);
 d.querySelector('[data-open="0"]').click();assert.equal(d.querySelector('#modal').hidden,false);assert(d.querySelector('#mTitle').textContent.includes('Реконструкция'));d.querySelector('#mClose').click();assert(d.querySelector('#modal').hidden);
 const read=()=>d.querySelector('#rTotal').textContent;
 assert(/₽/.test(read()));console.log('Initial price:',read());
-for(const area of [200,12000,45000,400000]){const input=d.querySelector('#cArea');input.value=area;input.dispatchEvent(new w.Event('change',{bubbles:true}));assert(/₽/.test(read()));assert(!read().includes('NaN'));console.log('Area',area,'price',read());}
+for(const area of [5000,12000,45000,400000]){const input=d.querySelector('#cArea');input.value=area;input.dispatchEvent(new w.Event('change',{bubbles:true}));assert(/₽/.test(read()));assert(!read().includes('NaN'));console.log('Area',area,'price',read());}
 for(const id of ['cNPM','cVPM','cCIM']){d.getElementById(id).checked=false;d.getElementById(id).dispatchEvent(new w.Event('input',{bubbles:true}));}assert.equal(read(),'—');
 d.getElementById('cCIM').checked=true;d.getElementById('cCIM').dispatchEvent(new w.Event('input',{bubbles:true}));assert(/₽/.test(read()));
 assert(!d.querySelector('#grpNV').hidden);assert(!d.querySelector('#grpC').hidden);

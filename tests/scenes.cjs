@@ -5,7 +5,7 @@ w.HTMLCanvasElement.prototype.getContext=()=>native2d;w.HTMLCanvasElement.protot
 w.matchMedia=()=>({matches:false});w.IntersectionObserver=class{observe(){} disconnect(){}};w.ResizeObserver=class{observe(){} disconnect(){}};const animationCallbacks=[];w.requestAnimationFrame=cb=>{animationCallbacks.push(cb);return 0};w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
 class Renderer{constructor(o){this.domElement=o.canvas;this.shadowMap={};renderers.push(this)}getContext(){return {}}setPixelRatio(){}setSize(){}render(s,c){s.updateMatrixWorld(true);c.updateMatrixWorld(true);this.scene=s;this.camera=c}}
 THREE.WebGLRenderer=Renderer;w.THREE=THREE;
-for(const p of ['assets/gran-visual.js','assets/reference-project.js','assets/ryabinovaya-project.js'])w.eval(fs.readFileSync(p,'utf8'));
+for(const p of ['assets/gran-visual.js','assets/reference-project.js','assets/ryabinovaya-project.js','assets/photo-tower-project.js'])w.eval(fs.readFileSync(p,'utf8'));
 const errors=[];w.addEventListener('error',e=>errors.push(String(e.error)));
 for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){let code=match[1];if(!code.trim())continue;if(code.includes('let calcViewer'))code+='\nwindow.__check={get:()=>({calcViewer,modalViewer,lastCalc,PROJECTS,buildProject,calcPrice,mats,setMode})};';w.eval(code)}
 const get=()=>w.__check.get();
@@ -29,7 +29,7 @@ function check(){
  const hero=renderers[0];d.querySelector('#viewer canvas').getBoundingClientRect=()=>({left:0,top:0,width:600,height:600});get().setMode('cim');hero.scene.updateMatrixWorld(true);hero.camera.updateMatrixWorld(true);
  const pt=new THREE.Vector3(-13,31.5,-.5).project(hero.camera);const event=new w.MouseEvent('pointerup',{clientX:(pt.x+1)*300,clientY:(1-pt.y)*300,bubbles:true});d.querySelector('#viewer canvas').dispatchEvent(event);
  assert.equal(d.querySelector('#vinfo').style.display,'block','hero IFC selection');assert(d.querySelector('#vinfoBody').textContent.includes('Корпус'));
- get().setMode('npm');assert.equal(hero.shadowMap.enabled,true);get().setMode('vpm');assert.equal(hero.shadowMap.enabled,true);get().setMode('cim');assert.equal(hero.shadowMap.enabled,false);
+ get().setMode('npm');assert.equal(hero.shadowMap.enabled,true);assert(!hero.scene.getObjectByName('context-ground-shadows').visible);get().setMode('vpm');assert.equal(hero.shadowMap.enabled,true);const floor=hero.scene.getObjectByName('context-ground'),shadow=hero.scene.getObjectByName('context-ground-shadows');assert.equal(floor.material.toneMapped,false);assert.equal(floor.material.color.clone().convertLinearToSRGB().getHex(),w.GranVisual.presets.vpm.background);assert(shadow.visible&&shadow.receiveShadow);assert(hero.scene.children.filter(o=>o.isGroup).some(g=>g.children.filter(o=>o.isMesh&&o.geometry.type==='BoxGeometry').length>=8),'background buildings remain');get().setMode('cim');assert.equal(hero.shadowMap.enabled,false);
  assert.deepEqual(errors,[]);console.log('CPU scene lifecycle, mode visibility/styles, VPM-only project modal, IFC picking: PASS');
  w.close();
 }
