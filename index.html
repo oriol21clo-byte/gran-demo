@@ -40,6 +40,7 @@ html{scroll-behavior:smooth;scroll-padding-top:var(--gran-header-height,64px)}
  #projects .prj .prj-overlay>div{align-items:flex-start;text-align:left;min-width:0;gap:3px}
  #projects .prj .prj-overlay strong,#projects .prj .prj-overlay span{text-shadow:none;overflow-wrap:anywhere}
 }
+
 </style></head><body>
 <!doctype html>
 <html lang="ru"><!-- GRAN 1.11: hero-only grid; calibrated richer model colors -->
@@ -689,6 +690,20 @@ body{background-image:none}
 #why-us .why-foot{margin-top:18px}
 @media(min-width:761px) and (max-width:1000px){#why-us .why-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){:root{--section-space:36px;--card-gap:16px}#why-us .why-heading{display:block}#why-us .why-heading>p{margin-top:14px}#why-us .why-grid{grid-template-columns:1fr;gap:12px}#why-us .why-metric,#why-us .why-metric:first-child{padding:22px}#why-us .why-metric+.why-metric{border-top:1px solid var(--line)}#why-us .why-metric strong{font-size:40px}#why-us .why-metric:first-child strong{font-size:58px}}
+
+/* Project passports: three comparable indicators and readable object names. */
+#projects .prj .nda{display:grid;grid-template-columns:1fr;gap:7px;align-items:start;flex:1}
+#projects .prj .nda>div{display:grid;grid-template-columns:48px minmax(0,1fr);gap:6px;align-items:baseline}
+#projects .prj .nda dd{font:400 12px/1.5 var(--fb);overflow-wrap:anywhere}
+#projects .prj .nda>div+div dd{font:500 11px/1.5 var(--fm)}
+#projects .prj .body{align-items:flex-end;min-height:116px}
+#projects .prj .prj-overlay{top:76px;bottom:auto;right:14px;transform:none;width:110px;display:grid;gap:15px}
+#projects .prj .prj-overlay>div+div{border:0}
+#projects .prj .prj-overlay>div{padding:0}
+.project-metrics{position:absolute;right:20px;top:24px;z-index:4;display:grid;gap:18px;text-align:right;pointer-events:none}
+.project-metrics strong{display:block;font:600 15px/1.35 var(--fm)}
+.project-metrics span{display:block;font:400 11px/1.5 var(--fb);color:var(--ink2)}
+@media(max-width:640px){#projects .prj .prj-overlay{position:static;width:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:12px;gap:8px}#projects .prj .prj-overlay>div{text-align:left}#projects .prj .body{align-items:stretch;flex-direction:column;gap:12px;min-height:0}#projects .prj .body>.btn{align-self:flex-end}.project-metrics{right:12px;top:14px;gap:12px}.project-metrics strong{font-size:13px}.project-metrics span{font-size:10px}}
 </style></head>
 <body>
 
@@ -954,7 +969,7 @@ body{background-image:none}
         <button class="xbtn" id="mClose" aria-label="Закрыть">×</button>
       </div>
     </div>
-    <div class="stage" id="modalStage"><div class="ov bl cap">Вращение — левая кнопка мыши, сдвиг — правая, масштаб — колесо</div></div>
+    <div class="stage" id="modalStage"><div class="project-metrics" id="modalMetrics" aria-label="Характеристики проекта"></div><div class="ov bl cap">Вращение — левая кнопка мыши, сдвиг — правая, масштаб — колесо</div></div>
   </div>
 </div>
 <div class="cookie" id="cookie" hidden>
@@ -1289,8 +1304,9 @@ function buildProject(spec) {
   if (spec.reference === 'brown-white-tower') return GranPhotoTower.build();
   if (spec.reference === 'ryabinovaya') return GranRyabinovaya.build();
   if (spec.reference === 'six-tower-courtyard') return buildReferenceProject(spec);
-  const M = mats(), FH = 3.2, root = new THREE.Group(), g = { npm: new THREE.Group(), vpm: new THREE.Group(), cim: new THREE.Group() }; root.add(g.npm, g.vpm, g.cim);
+  const M = Object.assign({},mats()), FH = 3.2, root = new THREE.Group(), g = { npm: new THREE.Group(), vpm: new THREE.Group(), cim: new THREE.Group() }; root.add(g.npm, g.vpm, g.cim);
   const fac = spec.facade == null ? 1 : spec.facade, bim = !!spec.bim;
+  if(spec.albumFacade){root.userData.materials=[];for(const [key,c] of Object.entries({white:0x62615f,panel:0x817b70,stone:0xa6a39a,brick:0x66574b,terra:0x786457,dark:0x414a50})){M[key]=M[key].clone();M[key].color.setHex(c).convertSRGBToLinear();root.userData.materials.push(M[key])}}
   const geo = [], box = (w, h, d, m, x, y, z) => { const G = new THREE.BoxGeometry(w, h, d); geo.push(G); const o = new THREE.Mesh(G, m); o.position.set(x, y, z); return o };
   const edges = (mesh, m, th) => { const G = new THREE.EdgesGeometry(mesh.geometry, th || 1); geo.push(G); const e = new THREE.LineSegments(G, m); e.position.copy(mesh.position); return e };
   const SW = spec.site.w, SD = spec.site.d, B = spec.buildings;
@@ -1463,7 +1479,7 @@ function buildProject(spec) {
       [[0, 1], [0, -1], [1, 0], [-1, 0]].forEach(([nx, nz], fi) => {
         const L = nx ? b.d : b.w, bays = Math.max(2, Math.round(L / (wide ? 3.6 : 3))), sp = L / bays, off = (nx ? b.w : b.d) / 2 + .04;
         for (let k = 0; k < b.f; k++) { const y = y0 + k * FH + FH * .52;
-          for (let i = 0; i < bays; i++) { const t = -L / 2 + sp / 2 + i * sp, px = b.x + (nx ? nx * off : t), pz = b.z + (nz ? nz * off : t), ww = sp * (wide ? .72 : brick ? .42 : .5), wh = wide ? 1.9 : 1.6;
+          for (let i = 0; i < bays; i++) { const t = -L / 2 + sp / 2 + i * sp, px = b.x + (nx ? nx * off : t), pz = b.z + (nz ? nz * off : t), ww = sp * (spec.albumFacade ? .76 : wide ? .72 : brick ? .42 : .5), wh = spec.albumFacade ? 2.45 : wide ? 1.9 : 1.6;
             win.push([px, y, pz, nx ? .1 : ww, wh, nx ? ww : .1]); (brick ? frmW : frmD).push([px, y, pz, nx ? .05 : ww + .2, wh + .2, nx ? ww + .2 : .05]);
             if (b.kind !== 'res' || k === 0) continue;
             const bal = fac >= 3 ? (fi < 2 || (i + k) % 2 === 0) : fac >= 2 ? (i + k) % 2 === 0 : fac >= 1 && fi === 0 && i % 2 === 0 && !brick;
@@ -1758,7 +1774,7 @@ function bindModes(container, viewer) {
 /* ===================== НАШИ ПРОЕКТЫ ===================== */
 const PROJECT_OBJECT_NAMES = ['Ав******ая', 'Баб*****ая', 'Авто*****ая', 'Ряб*****ая'];
 const PROJECTS = [
-  { title: 'Жилой комплекс с внутренним двором', tag: 'ВПМ · по изображениям', facts: [['6', 'корпусов'], ['Двор', 'благоустройство'], ['3D', 'реконструкция']],
+  { title: 'Жилой комплекс с внутренним двором', tag: 'ВПМ · по изображениям', facts: [['—', 'СПП в ГНС, м²'], ['—', 'Высота, м'], ['—', 'Участок, га']],
     spec: { reference: 'six-tower-courtyard', site: { w:132,d:122 }, buildings: [
       {x:-41,z:-28,w:25,d:25,f:27,finish:'white',tiers:[{w:25,d:25,f:9},{w:23,d:24,f:5,x:1},{w:20,d:22,f:4,x:2,z:-1},{w:17,d:20,f:4,x:2,z:-2},{w:14,d:18,f:5,x:2,z:-3}]},
       {x:-42,z:9,w:21,d:20,f:19,finish:'red'},
@@ -1767,29 +1783,30 @@ const PROJECTS = [
       {x:43,z:-23,w:23,d:33,f:24,finish:'grey',tiers:[{w:23,d:33,f:13},{w:20,d:29,f:11,x:0,z:-2}]},
       {x:0,z:-29,w:23,d:22,f:21,finish:'gold'}
     ] } },
-  { title: 'Объект: Баб*****ая · реконструкция по фотографиям', tag: 'ВПМ · по фотографиям', facts: [['По фото', 'реконструкция'], ['Фасады', 'и благоустройство'], ['ВПМ', 'архитектура']],
+  { title: 'Многоквартирный жилой дом с подземной автостоянкой и встроенными нежилыми помещениями', address: 'ул. Баб***ая', tag: 'ВПМ · архитектура', facts: [['11 570,4', 'СПП в ГНС, м²'], ['—', 'Высота, м'], ['0,3306', 'Участок, га']],
     spec: { reference: 'brown-white-tower' } },
-  { title: 'Жилой комплекс', tag: 'ВПМ · архитектура', facts: [['104 400', 'м² СПП'], ['100 м', 'высота'], ['2', 'участка']],
+  { title: 'Многоквартирный жилой дом со встроенно-пристроенными помещениями и подземной автостоянкой', address: 'ул. Авто****ая', tag: 'ВПМ · архитектура', facts: [['104 403,8', 'СПП в ГНС, м²'], ['99,45', 'Высота, м', 'Предельная проектная высота по альбому АГР'], ['2,8501', 'Участок, га']],
     spec: (() => {
       const blk = (cz, s) => [
-        [-38, -16.5, 24, 13, 9, 'brick'], [-13, -16.5, 26, 13, 12, 'stone'], [13, -16.5, 26, 13, 8, 'terra'], [38, -12, 24, 22, 28, 'dark'],
-        [-36, 16.5, 28, 13, 7, 'stone'], [-9, 16.5, 26, 13, 10, 'brick'], [21, 16.5, 32, 13, 8, 'panel'],
+        [-38, -16.5, 24, 13, 5, 'brick'], [-13, -16.5, 26, 13, 11, 'stone'], [13, -16.5, 26, 13, 7, 'terra'], [38, -12, 24, 22, 28, 'dark'],
+        [-36, 16.5, 28, 13, 8, 'stone'], [-9, 16.5, 26, 13, 3, 'brick'], [21, 16.5, 32, 13, 17, 'panel'],
         [-43.5, 0, 13, 20, 8, 'terra'], [43.5, 4, 13, 12, 9, 'stone']
       ].map(([x, z, w, d, f, mat]) => ({ x: x * s, z: cz + z * s, w, d, f, kind: 'res', mat }));
-      return { site: { w: 130, d: 124 }, trees: 56, seed: 3, paths: [[0, 0, 122, 5]], buildings: [...blk(-31, 1), ...blk(31, -1)] };
+      return { albumFacade:true, site: { w: 130, d: 124 }, trees: 84, seed: 3, paths: [[0, 0, 122, 5]], buildings: [...blk(-31, 1), ...blk(31, -1)] };
     })() },
-  { title: 'Рябиновая · визуальная реконструкция', tag: 'ВПМ · по гостевому виду', facts: [['2', 'основных объёма'], ['По виду', 'реконструкция'], ['ВПМ', 'архитектура']],
+  { title: 'Офисный центр с подземным паркингом и встроенными нежилыми помещениями', address: 'ул. Реб***ая', tag: 'ВПМ · архитектура', facts: [['32 817,5', 'СПП в ГНС, м²'], ['89,3', 'Высота, м'], ['0,746', 'Участок, га']],
     spec: { reference: 'ryabinovaya' } },
 ];
+function projectFacts(p){return p.facts.map(([a,b,note])=>`<div${note ? ` title="${note}"` : a==='—'?' title="Данные уточняются"':''}><strong>${a}</strong><span>${b}</span></div>`).join('')}
 let modalViewer = null;
 (function () {
   const list = $('#projList');
-  list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="ov tr cap">${p.tag}</div><div class="prj-overlay">${p.facts.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div></div><div class="body"><dl class="nda"><div><dt>Объект:</dt><dd>${PROJECT_OBJECT_NAMES[i]}</dd></div></dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
+  list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="prj-overlay">${projectFacts(p)}</div></div><div class="body"><dl class="nda"><div><dt>Объект:</dt><dd>${p.address ? p.title : PROJECT_OBJECT_NAMES[i]}</dd></div>${p.address ? `<div><dt>Адрес:</dt><dd>${p.address}</dd></div>` : ''}</dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
   $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: true, modes: ['vpm'] }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
   list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openProject(+b.dataset.open) });
   const modal = $('#modal'); let lastFocus = null;
   function openProject(i) {
-    lastFocus = document.activeElement; modal.hidden = false; document.body.style.overflow = 'hidden'; $('#mTitle').textContent = i === 1 ? 'Объект: '+PROJECT_OBJECT_NAMES[i]+' · реконструкция по фотографиям' : (i === 0 || i === 3) ? (i === 3 ? 'Рябиновая · реконструкция по гостевому виду, размеры ориентировочные' : 'Реконструкция по изображениям · размеры ориентировочные') : 'Проект · ' + PROJECTS[i].tag;
+    lastFocus = document.activeElement; modal.hidden = false; document.body.style.overflow = 'hidden'; $('#mTitle').textContent = PROJECTS[i].address ? PROJECTS[i].address+' · '+PROJECTS[i].title : 'Реконструкция по изображениям · '+PROJECT_OBJECT_NAMES[i];$('#modalMetrics').innerHTML=projectFacts(PROJECTS[i]);
     if (!modalViewer) { modalViewer = new Viewer($('#modalStage'), { interactive: true, zoom: true, auto: true, modes: ['vpm'] }) }
     modalViewer.mode = 'vpm'; modalViewer._placed = false; modalViewer.setProject(PROJECTS[i].spec);
     $$('[data-view]', modal).forEach(x => x.setAttribute('aria-pressed', String(x.dataset.view === 'iso'))); $('#mClose').focus();

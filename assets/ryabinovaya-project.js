@@ -1,5 +1,5 @@
 /* Рябиновая: approximate reconstruction of the loaded guest-view geometry.
-   Dimensions, floors, hidden faces and planting are estimates, not surveyed data. */
+   Album sheets 21 and 44 confirm 89.3 m overall height and facade setbacks; plan positions and hidden details remain estimates. */
 (function(global){
  'use strict';if(!global.THREE)return;const T=global.THREE;
  function build(){
@@ -42,10 +42,16 @@
   polygon([[23,31],[40,22],[47,27],[42,39],[28,40]],.24,M.pave);
   const islands=[{x:-31,z:14,w:8,d:5},{x:35,z:31,w:7,d:4}];
   islands.forEach(({x,z,w,d})=>{const p=[[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2]];volume(p,.24,.28,M.cap,.8);volume([[x-w/2+.2,z-d/2+.2],[x+w/2-.2,z-d/2+.2],[x+w/2-.2,z+d/2-.2],[x-w/2+.2,z+d/2-.2]],.52,.03,M.lawn,.6);});
-  const tower=[[-25,-17],[-9,-17],[-9,3],[-25,3]];
+  const tower=[[-34,-26],[-9,-26],[-9,3],[-34,3]];
   const wedge=[[-3,-12],[38,1],[9,28]];
-  const towerH=56.1,lowH=19.8,roofY=x=>lowH+.49+.09*(x+3);
-  volume(tower,.14,towerH,M.body,1.8,0,false,true);
+  const towerH=85.3,lowH=36.7,roofY=x=>lowH+.49+.09*(x+3);
+  const upper1=tower.map(([x,z])=>[x===-34?x+1.25:x,z===-26?z+1.1:z]);
+  const upper2=tower.map(([x,z])=>[x===-34?x+2.5:x,z===-26?z+2.2:z]);
+  volume(tower,.14,68.86,M.body,1.8);
+  volume(upper1,69,8.1,M.body,1.65);
+  volume(upper2,77.1,8.2,M.body,1.5);
+  // Thin terrace copings at the documented +69.000 and +77.100 setbacks.
+  volume(tower,68.88,.12,M.cap,1.8);volume(upper1,76.98,.12,M.cap,1.65);
   volume(wedge,.14,lowH,M.body,3.5,.09);volume(wedge,lowH+.14,.35,M.roof,3.5,.09,true);
   // Supplied photos supersede the earlier incorrect browser-agent description.
   // A ground-level glazed connecting volume with a broad, gently sloped grey roof.
@@ -79,10 +85,10 @@
    for(const side of [-1,1])box(M.cap,x+tx*side*.23+nx*.12,1.8,z+tz*side*.23+nz*.12,.04,.5,.045,angle,false);
   }
   entrance(-17,3.18,0);entrance(23.55,14.55,-Math.atan2(27,-29));
-  function facade(points,floors,spacing,y0=1.2,margin=1){
+  function facade(points,floors,spacing,y0=1.2,margin=1,fh=3.3){
    points.forEach((a,i)=>{const b=points[(i+1)%points.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),n=Math.max(1,Math.floor((L-2*margin)/spacing)),angle=-Math.atan2(dz,dx),nx=dz/L,nz=-dx/L;
     for(let f=0;f<floors;f++)for(let j=0;j<n;j++){
-     const t=(margin+(j+.5)*(L-2*margin)/n)/L;let cx=a[0]+dx*t,cz=a[1]+dz*t;const cy=y0+f*3.3+1.15,scale=points===tower?1-.07*cy/towerH:1,pitch=(L-2*margin)/n*scale,ww=pitch-.25,wh=2.25;
+     const t=(margin+(j+.5)*(L-2*margin)/n)/L;let cx=a[0]+dx*t,cz=a[1]+dz*t;const cy=y0+f*fh+fh/2,scale=1,pitch=(L-2*margin)/n*scale,ww=pitch-.25,wh=fh-.30;
      if(points===tower){cx=(cx+17)*scale-17;cz=(cz+7)*scale-7;}
      box(f===0?bridgeGlass:glass[(f*3+j+i)%glass.length],cx+nx*.08,cy,cz+nz*.08,ww,wh,.12,angle,false);
      // Physical aluminium jambs, recessed glass, projecting sill and transom.
@@ -94,16 +100,20 @@
      box(M.frame,cx+nx*.2,cy-.32,cz+nz*.2,ww,.045,.16,angle,false);
      box(M.body,cx+nx*.2,cy-1.28,cz+nz*.2,ww+.22,.12,.4,angle,false);
     }
-    for(let f=1;f<=floors;f++){const scale=points===tower?1-.07*(f*3.3)/towerH:1;box(M.frame,((a[0]+b[0])/2+17)*scale-17+nx*.12,f*3.3+.25,((a[1]+b[1])/2+7)*scale-7+nz*.12,L*scale-.3,.14,.2,angle,false);}
+    for(let f=1;f<=floors;f++){const scale=1;box(M.frame,((a[0]+b[0])/2+17)*scale-17+nx*.12,y0+f*fh,((a[1]+b[1])/2+7)*scale-7+nz*.12,L*scale-.3,.14,.2,angle,false);}
    });
   }
-  facade(tower,17,1.7,.6,1.9);facade(wedge,6,2.4,.6,4);
+  facade(tower,1,1.7,.14,1.9,5.86);
+  facade(tower,16,1.7,6,1.9,3.9375);
+  facade(upper1,2,1.7,69,1.8,4.05);facade(upper2,2,1.7,77.1,1.8,4.1);
+  facade(wedge,1,2.4,.14,4,5.86);facade(wedge,9,2.4,6,4,3.3);
   // Stepped light crown, parapets and the visible low-building roof feature.
   // Layered crown with glazing, rather than the previous solid white cap.
-  box(M.cap,-17,towerH+.6,-7,15.5,.65,19.2);box(M.roof,-17,towerH+1,-7,14.8,.12,18.5,0,false);
-  box(glass[2],-17,towerH+2.2,-8,12,2.4,14,0,false);box(M.cap,-17,towerH+3.5,-8,12.8,.3,14.8);
-  for(const x of [-22.7,-20.8,-18.9,-17,-15.1,-13.2,-11.3])box(M.frame,x,towerH+2.2,-.92,.07,2.4,.13,0,false);
-  box(M.roof,-17,towerH+4.5,-9,9.3,1.7,10);box(M.cap,-17,towerH+5.4,-9,9.8,.18,10.6);
+  box(M.roof,-20.25,towerH+.10,-10.4,20,.20,24);
+  box(M.frame,-21.5,87.1,-11.5,14,3.1,16);
+  box(M.frame,-21.5,89.20,-11.5,14.5,.20,16.6);
+  // Rooftop ventilation banks and physical louvres, visible in the album axonometry.
+  for(const x of [-19,-15,-11]){box(M.roof,x,86.2,-9,2.7,1.5,3.4);for(let z=-10.4;z<-7.5;z+=.35)box(M.cap,x,87,z,2.75,.07,.10);}
   const skylightY=roofY(14);
   box(M.cap,14,skylightY+.3,6,8,.6,5);box(glass[2],14,skylightY+.67,6,7.3,.14,4.3,0,false);
   for(let x=10.4;x<18;x+=1.45)box(M.frame,x,skylightY+.78,6,.065,.12,4.5,0,false);
@@ -118,8 +128,8 @@
   trees.forEach(([x,z],i)=>{box(M.trunk,x,1.1,z,.22,2.2,.22);foliage.push([x,3.2+(i%3)*.2,z,1.8+(i%2)*.3,2.2,1.8,0,true]);});
   function instances(G,m,list){const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((a,i)=>{dummy.position.set(a[0],a[1],a[2]);dummy.rotation.set(0,a[6],0);dummy.scale.set(a[3],a[4],a[5]);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.castShadow=list.some(a=>a[7]);mesh.receiveShadow=true;vpm.add(mesh);}
   batches.forEach((list,m)=>instances(unit,m,list));leaf.forEach((m,i)=>instances(crown,m,foliage.filter((_,j)=>j%3===i)));
-  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Рябиновая',estimated:true,source:'user supplied photos for connector; other dimensions estimated',mainMasses:2,wedge:true,heightRatio:towerH/lowH,connector:{type:'ground-glazed',base:.1,roofMin:3.6,roofMax:4.3,curvedFront:true,roofOpaque:true},slopedRoof:true,plantedIslands:2,entranceStairs:true,paverGeometry:true};
-  return{root,g,radius:Math.max(Math.hypot(105,92)/2,(towerH+5.6)*.95),maxH:towerH+5.6};
+  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Рябиновая',estimated:true,source:'AGR album sheets 6, 21 and 44; user supplied connector photos; plan positions estimated',documentedHeight:89.3,terraceLevels:[69,77.1],mainMasses:2,wedge:true,heightRatio:towerH/lowH,connector:{type:'ground-glazed',base:.1,roofMin:3.6,roofMax:4.3,curvedFront:true,roofOpaque:true},slopedRoof:true,plantedIslands:2,entranceStairs:true,paverGeometry:true};
+  return{root,g,radius:Math.max(Math.hypot(105,92)/2,89.3*.95),maxH:89.3};
  }
  global.GranRyabinovaya={build};
 })(window);
