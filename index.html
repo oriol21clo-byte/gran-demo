@@ -829,7 +829,7 @@ body{background-image:none}
             <label class="mcheck" style="--c:var(--cim)"><input type="checkbox" id="cCIM" checked><b>ЦИМ</b><small>IFC</small></label>
           </div></div>
         <div class="field"><label for="cArea">Площадь ОКС <span class="val tnum" id="vArea"></span></label>
-          <div class="rangerow"><input type="range" id="cAreaR" min="0" max="100" value="45" aria-label="Площадь ОКС"><input type="number" id="cArea" min="5000" max="400000" step="100" value="24000" aria-label="Площадь ОКС, м²"></div></div>
+          <div class="rangerow"><input type="range" id="cAreaR" min="0" max="100" step="0.01" value="45" aria-label="Площадь ОКС"><input type="number" id="cArea" min="0" max="400000" step="100" value="24000" aria-label="Площадь ОКС, м²"></div></div>
         <div class="cgrp" id="grpNV" style="--c:var(--vpm)">
           <div class="cgrp-h"><i></i>Для всех моделей</div>
           <div class="field"><div class="lbl">Фасады</div>
@@ -1222,7 +1222,7 @@ let setMode = () => {};
   let visible=true; if(window.IntersectionObserver)new IntersectionObserver(es=>{visible=es[0].isIntersecting}).observe(wrap);
   let prev=performance.now(), frames=0;
   (function loop(now){requestAnimationFrame(loop);const dt=Math.min(50,now-prev);prev=now;
-    if(document.hidden||(!visible&&frames>5))return;
+    if(document.hidden||!$('#modal').hidden||(!visible&&frames>5))return;
     if(!drag&&now-lastAct>2500)theta+=dt*.000035;
     radius+=(radiusT-radius)*(1-Math.exp(-dt/140));
     if(growG&&growT<1){growT=Math.min(1,growT+dt/650);growG.scale.y=Math.max(.001,1-Math.pow(1-growT,3))}
@@ -1658,6 +1658,7 @@ class Viewer {
     try { this.r = new THREE.WebGLRenderer({ canvas: c, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: this.o.preserve }) } catch (e) { el.insertAdjacentHTML('beforeend', '<div class="nogl">WebGL недоступен в этом браузере</div>'); this.dead = true; return }
     const r = this.r; r.setPixelRatio(1); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.12;
     const s = this.scene = new THREE.Scene(); s.background = new THREE.Color(0xE9EDF1);
+    const projectGround=this.projectGround=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshStandardMaterial({color:new THREE.Color(0xbfc1c0).convertSRGBToLinear(),roughness:1,fog:false}));projectGround.name='project-ground';projectGround.rotation.x=-Math.PI/2;projectGround.position.y=-1.28;s.add(projectGround);
     this.lighting=GranVisual.create(s,r,!this.o.interactive||matchMedia('(max-width:760px)').matches);
     this.sun=this.lighting.sun;
     const sc = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: .14 })); sc.rotation.x = -Math.PI / 2; sc.position.y = -1.25; sc.receiveShadow = true; s.add(sc);
@@ -1671,13 +1672,13 @@ class Viewer {
     const rs = () => { const w = c.clientWidth || el.clientWidth, h = c.clientHeight || el.clientHeight; if (!w || !h) return; r.setPixelRatio(granRenderScale(w,h,!this.o.interactive)); r.setSize(w, h, false); GranVisual.project(this.cam,w/h,this.viewDistance||this.dist||235); this.dirty = true };
     if ('ResizeObserver' in window) new ResizeObserver(rs).observe(el); addEventListener('resize', rs); rs();
     let prev = performance.now();
-    const loop = now => { requestAnimationFrame(loop); const dt = Math.min(50, now - prev); prev = now; if (document.hidden || !this.visible || (!this.p && !this.lv)) return; this.tick(dt); if (this.dirty) { this.dirty = false; r.render(s, this.cam) } };
+    const loop = now => { requestAnimationFrame(loop); const dt = Math.min(50, now - prev); prev = now; if (document.hidden || !this.visible || (el.id!=='modalStage'&&!$('#modal').hidden) || (el.id==='modalStage'&&$('#modal').hidden) || (!this.p && !this.lv)) return; this.tick(dt); if (this.dirty) { this.dirty = false; r.render(s, this.cam) } };
     requestAnimationFrame(loop);
   }
   setProject(spec, keepView) {
     if (this.dead) return;
     if (this.p) { this.scene.remove(this.p.root); this.p.root.userData.geo.forEach(G => G.dispose());(this.p.root.userData.materials||[]).forEach(m=>m.dispose()) }
-    this.p = buildProject(spec); this.p.spec = spec; this.scene.add(this.p.root); this.setMode(this.mode);
+    this.p = buildProject(spec); this.p.root.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false}); this.p.spec = spec; this.scene.add(this.p.root); this.setMode(this.mode);
     const R = this.p.radius, sun = this.sun; this.target = new THREE.Vector3(0, this.p.maxH * .45, 0);
     GranVisual.frame(this.lighting,R,this.target);
     this.dist = R * 3.3; this.clip(R);
@@ -1703,7 +1704,7 @@ class Viewer {
     else if (this.ctl) { this.ctl.autoRotateSpeed = .2 * dt / (1000 / 60); this.ctl.dampingFactor = 1 - Math.exp(-dt / 180); if (this.ctl.update()) this.dirty = true }
     else if (this.o.auto) { this.theta += dt * .000035; this.place(this.theta, 1.05, this.dist) }
   }
-  setMode(m) { if(!this.o.modes.includes(m))m=this.o.modes[0];this.mode = m; this.dirty = true;if(this.lighting)GranVisual.apply(this.lighting,m);if(this.lv){this.lv.body.material.color.set(m==='npm'?0xC9BCA7:0xE6E9EE).convertSRGBToLinear();this.lv.seam.material.color.set(m==='npm'?0xB8A88E:0x1F4FBF).convertSRGBToLinear();} if (this.p) for (const k in this.p.g) this.p.g[k].visible = !(this.lv && this.lv.grp.visible && !this.lv.reveal) && k === m }
+  setMode(m) { if(!this.o.modes.includes(m))m=this.o.modes[0];this.mode = m; this.dirty = true;if(this.projectGround)this.projectGround.visible=m==='vpm';if(this.lighting)GranVisual.apply(this.lighting,m);if(this.lv){this.lv.body.material.color.set(m==='npm'?0xC9BCA7:0xE6E9EE).convertSRGBToLinear();this.lv.seam.material.color.set(m==='npm'?0xB8A88E:0x1F4FBF).convertSRGBToLinear();} if (this.p) for (const k in this.p.g) this.p.g[k].visible = !(this.lv && this.lv.grp.visible && !this.lv.reveal) && k === m }
   // Живой макет «как конструктор»: пока двигают площадь, этажи-блоки на лету падают сверху и встают друг на друга
   // или разбираются; корпуса плавно сдвигаются, участок растёт. Сцена не пересобирается, обновляются только инстансы.
   // Когда площадь перестаёт меняться, под макетом строится детальная модель, и блоки по этажам снизу вверх уступают ей место.
@@ -1774,7 +1775,7 @@ function bindModes(container, viewer) {
 /* ===================== НАШИ ПРОЕКТЫ ===================== */
 const PROJECT_OBJECT_NAMES = ['Ав******ая', 'Баб*****ая', 'Авто*****ая', 'Ряб*****ая'];
 const PROJECTS = [
-  { title: 'Многоквартирные дома со встроенно-пристроенными помещениями и подземной автостоянкой', address: 'ул. Ав***ая', tag: 'ВПМ · по изображениям', facts: [['71 136', 'СПП в ГНС, м²'], ['—', 'Высота, м'], ['—', 'Участок, га']],
+  { title: 'Многоквартирные дома со встроенно-пристроенными помещениями и подземной автостоянкой', address: 'ул. Ав***ая', tag: 'ВПМ · по изображениям', facts: [['71 136', 'СПП в ГНС, м²'], ['74,15', 'Высота, м', 'Максимальная высота корпусов; этап 4: 48,95–74,15 м, этап 3: 52,54 м'], ['3,04', 'Участок, га']],
     spec: { reference: 'six-tower-courtyard', site: { w:132,d:122 }, buildings: [
       {x:-41,z:-28,w:25,d:25,f:27,finish:'white',tiers:[{w:25,d:25,f:9},{w:23,d:24,f:5,x:1},{w:20,d:22,f:4,x:2,z:-1},{w:17,d:20,f:4,x:2,z:-2},{w:14,d:18,f:5,x:2,z:-3}]},
       {x:-42,z:9,w:21,d:20,f:19,finish:'red'},
@@ -1822,9 +1823,9 @@ let calcViewer, lastCalc;
 (function () {
   const cv = calcViewer = new Viewer($('#calcStage'), { interactive: !isTouch, zoom: false, auto: true, preserve: true });
   const modes = bindModes($('#calcStage'), cv);
-  const aR = $('#cAreaR'), aN = $('#cArea'), MIN = 5000, MAX = 400000;
-  const toA = v => { const a = MIN * Math.pow(MAX / MIN, v / 100); return a < 2000 ? Math.round(a / 50) * 50 : a < 20000 ? Math.round(a / 100) * 100 : Math.round(a / 1000) * 1000 };
-  const toP = a => Math.round(100 * Math.log(a / MIN) / Math.log(MAX / MIN));
+  const aR = $('#cAreaR'), aN = $('#cArea'), MIN = 0, MAX = 400000;
+  const toA = v => Math.round((v<=20 ? v/20*35000 : 35000+(v-20)/80*(MAX-35000))/100)*100;
+  const toP = a => a<=35000 ? a/35000*20 : 20+(a-35000)/(MAX-35000)*80;
   aR.value = toP(+aN.value);
   aR.addEventListener('input', () => { aN.value = toA(+aR.value); upd() });
   aR.addEventListener('change', () => { if (pend) { clearTimeout(tmr); pend() } });
