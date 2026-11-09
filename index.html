@@ -1,4 +1,10 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+<!doctype html><html><head><script>
+if('scrollRestoration' in history)history.scrollRestoration='manual';
+if(location.hash)history.replaceState(history.state,'',location.pathname+location.search);
+let granInitialNavigation=false;
+addEventListener('click',e=>{if(e.target.closest&&e.target.closest('a[href^="#"]'))granInitialNavigation=true});
+addEventListener('load',()=>{if(!granInitialNavigation)scrollTo(0,0)});
+</script><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* GRAN v1.1 — согласованные точечные изменения */
 html{scroll-behavior:smooth;scroll-padding-top:var(--gran-header-height,64px)}
 #why-us{background:#fff}
@@ -704,6 +710,9 @@ body{background-image:none}
 .project-metrics strong{display:block;font:600 15px/1.35 var(--fm)}
 .project-metrics span{display:block;font:400 11px/1.5 var(--fb);color:var(--ink2)}
 @media(max-width:640px){#projects .prj .prj-overlay{position:static;width:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:12px;gap:8px}#projects .prj .prj-overlay>div{text-align:left}#projects .prj .body{align-items:stretch;flex-direction:column;gap:12px;min-height:0}#projects .prj .body>.btn{align-self:flex-end}.project-metrics{right:12px;top:14px;gap:12px}.project-metrics strong{font-size:13px}.project-metrics span{font-size:10px}}
+
+/* Selected by the user: 01 Cold Graphite. Interface palette only. */
+:root{--paper:#f3f5f7;--surface:#ffffff;--ink:#17212e;--ink2:#17212e;--ink-btn:#17212e;--accent:#244fbb;--line:#d5dce5;--line2:#d5dce5}
 </style></head>
 <body>
 
@@ -987,7 +996,7 @@ body{background-image:none}
 <script src="assets/reference-project.js"></script>
 <script src="assets/ryabinovaya-project.js"></script>
 <script src="assets/photo-tower-project.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <script>
 const fmtMoney = n => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(n);
 const fmt = n => new Intl.NumberFormat('ru-RU').format(Math.round(n));
@@ -1803,7 +1812,12 @@ let modalViewer = null;
 (function () {
   const list = $('#projList');
   list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="prj-overlay">${projectFacts(p)}</div></div><div class="body"><dl class="nda"><div><dt>Объект:</dt><dd>${p.address ? p.title : PROJECT_OBJECT_NAMES[i]}</dd></div>${p.address ? `<div><dt>Адрес:</dt><dd>${p.address}</dd></div>` : ''}</dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
-  $$('.prj .stage', list).forEach(st => { const v = new Viewer(st, { interactive: false, auto: true, modes: ['vpm'] }); v.setProject(PROJECTS[+st.dataset.i].spec); st.addEventListener('click', () => openProject(+st.dataset.i)) });
+  $$('.prj .stage', list).forEach(st => {
+    let viewer;
+    const start=()=>{if(viewer)return;viewer=new Viewer(st,{interactive:false,auto:true,modes:['vpm']});viewer.setProject(PROJECTS[+st.dataset.i].spec)};
+    if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){observer.disconnect();start()}},{rootMargin:'180px'});observer.observe(st)}else start();
+    st.addEventListener('click',()=>{start();openProject(+st.dataset.i)});
+  });
   list.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openProject(+b.dataset.open) });
   const modal = $('#modal'); let lastFocus = null;
   function openProject(i) {
@@ -1844,7 +1858,7 @@ let calcViewer, lastCalc;
   // Макет по площади: число корпусов и этажность подбираются автоматически
   function specFrom(p) {
     const bld = p.area < 12000 ? 1 : p.area < 45000 ? 2 : 3, floors = Math.min(35, Math.max(3, Math.round(p.area / (bld * 700))));
-    const per = p.area / (bld * floors); let w = Math.sqrt(per * 1.7), d = per / w; w = Math.min(60, Math.max(12, w)); d = Math.min(24, Math.max(10, d));
+    const per = Math.max(1,p.area) / (bld * floors); let w = Math.sqrt(per * 1.7), d = per / w; w = Math.min(60, Math.max(12, w)); d = Math.min(24, Math.max(10, d));
     const gap = Math.max(12, w * .5), B = [];
     for (let i = 0; i < bld; i++) B.push({ x: (i - (bld - 1) / 2) * (w + gap), z: 0, w, d, f: Math.max(3, floors - (i === 1 ? Math.round(floors * .25) : 0)), kind: floors <= 4 ? 'school' : 'res', mat: ['stone', 'brick', 'panel'][i % 3] });
     // участок: двор перед домами, проезд сзади, боковая зона под парковку
@@ -1935,9 +1949,15 @@ function kpHTML(c, img, meta) {
   <div style="margin-top:auto;border-top:1px solid #DDE1E7;padding-top:12px;display:flex;justify-content:space-between;gap:16px;font-size:11px;color:#626C7A"><span>ГРАНЬ · цифровые модели для АГР · +7 (495) 000-00-00</span><span>Предварительный расчёт, не является офертой</span></div>
   </div>`;
 }
+let pdfLibraryPromise;
+function loadPdfLibrary(){
+ if(window.html2pdf)return Promise.resolve();
+ if(!pdfLibraryPromise)pdfLibraryPromise=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';script.onload=()=>window.html2pdf?resolve():reject(new Error('PDF unavailable'));script.onerror=()=>{script.remove();pdfLibraryPromise=null;reject(new Error('PDF unavailable'))};document.head.append(script)});
+ return pdfLibraryPromise;
+}
 async function makeKP(sample) {
   if (!lastCalc || !lastCalc.r.sel.length) { toast('Выберите хотя бы одну модель'); return }
-  if (!window.html2pdf) { toast('Для формирования PDF нужно подключение к интернету'); return }
+  try{await loadPdfLibrary()}catch(e){toast('Для формирования PDF нужно подключение к интернету');return}
   const meta = sample ? { company: 'ООО «Пример»', person: 'Иван Петров', object: 'Жилой комплекс, Москва' } : { company: $('#kpCompany').value.trim(), person: $('#kpPerson').value.trim(), object: $('#kpObject').value.trim() };
   const host = $('#kpRender'); host.innerHTML = kpHTML(lastCalc, calcViewer ? calcViewer.snapshot() : null, meta);
   toast('Формируем PDF…');

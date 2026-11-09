@@ -1,11 +1,11 @@
 const fs=require('fs'),assert=require('assert'),{JSDOM}=require('jsdom');
-const html=fs.readFileSync('index.html','utf8'),dom=new JSDOM(html,{url:'http://localhost/',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
+const html=fs.readFileSync('index.html','utf8'),dom=new JSDOM(html,{url:'http://localhost/#calc',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
 if(process.argv.includes('--webgl-blocked'))w.THREE={WebGLRenderer:class{constructor(){throw new Error('WebGL context unavailable')}}};
 w.matchMedia=()=>({matches:false,addListener(){},addEventListener(){}});w.IntersectionObserver=class{observe(){} unobserve(){} disconnect(){}};w.ResizeObserver=class{observe(){} disconnect(){}};
 w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLCanvasElement.prototype.getContext=()=>null;
 const unexpected=[];w.addEventListener('error',e=>unexpected.push(String(e.error)));w.console.error=()=>{};w.console.warn=()=>{};
 for(const code of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){if(code[1].trim())w.eval(code[1]);}
-const d=w.document;assert.equal(d.querySelectorAll('#why-us .why-metric').length,4);assert.equal(d.querySelectorAll('#why-us .why-metric strong')[2].textContent,'80+');assert.equal(d.querySelectorAll('#why-us .why-metric strong')[3].textContent,'20+');assert(!d.querySelector('#calc > .wrap > .label .demo-tag'));
+assert.equal(w.location.hash,'','fresh open starts at hero');const d=w.document;assert.equal(d.querySelectorAll('#why-us .why-metric').length,4);assert.equal(d.querySelectorAll('#why-us .why-metric strong')[2].textContent,'80+');assert.equal(d.querySelectorAll('#why-us .why-metric strong')[3].textContent,'20+');assert(!d.querySelector('#calc > .wrap > .label .demo-tag'));
 assert.equal(d.querySelectorAll('#projList .prj').length,4);
 const cards=[...d.querySelectorAll('#projList .prj')];
 assert(cards[0].querySelector('.nda dd').textContent.includes('Многоквартирные дома'));assert.equal(cards[0].querySelector('.nda>div+div dd').textContent,'ул. Ав***ая');
