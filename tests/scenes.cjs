@@ -13,7 +13,7 @@ async function check(){
  assert.equal(renderers.length,2,'only hero and calculator contexts created at startup');assert.equal(pendingCards.length,4);pendingCards.forEach(cb=>cb([{isIntersecting:true}]));assert.equal(renderers.length,6,'cards load when approaching viewport');
  const initialFrames=animationCallbacks.slice();
  const heroFrame=animationCallbacks[0], hc=renderers[0].camera;let clock=w.performance.now()+4000;heroFrame(clock);
- const angle=()=>Math.atan2(hc.position.x,hc.position.z-2);const start=angle();for(let i=0;i<60;i++)heroFrame(clock+=1000/60);const at60=angle();for(let i=0;i<120;i++)heroFrame(clock+=1000/120);const at120=angle();assert(Math.abs((at60-start)-.035)<1e-6);assert(Math.abs((at120-at60)-.035)<1e-6,'rotation speed independent of 60/120 Hz');
+ const angle=()=>Math.atan2(hc.position.x,hc.position.z-2);for(let i=0;i<300;i++)heroFrame(clock+=50);const start=angle();for(let i=0;i<60;i++)heroFrame(clock+=1000/60);const at60=angle();for(let i=0;i<120;i++)heroFrame(clock+=1000/120);const at120=angle();assert(Math.abs((at60-start)-.035)<1e-6);assert(Math.abs((at120-at60)-.035)<1e-6,'rotation speed independent of 60/120 Hz');
  const cv=get().calcViewer;assert(cv.p,'calculator geometry built');if(cv.lv)cv.lv.grp.visible=false;
  // Regression: zero must not poison live geometry or camera; repeated increases recover.
  for(const area of [0,35000,0,12000]){const input=d.querySelector('#cArea');input.value=area;input.dispatchEvent(new w.Event('change',{bubbles:true}));
