@@ -8,8 +8,8 @@ for(const code of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){if
 assert.equal(w.location.hash,'','fresh open starts at hero');const d=w.document;assert.equal(d.querySelectorAll('#why-us .why-metric').length,4);assert.equal(d.querySelectorAll('#why-us .why-metric strong')[2].textContent,'80+');assert.equal(d.querySelectorAll('#why-us .why-metric strong')[3].textContent,'20+');assert(!d.querySelector('#calc > .wrap > .label .demo-tag'));
 assert.equal(d.querySelectorAll('#projList .prj').length,4);
 const cards=[...d.querySelectorAll('#projList .prj')];
-assert(cards[0].querySelector('.nda dd').textContent.includes('Многоквартирные дома'));assert.equal(cards[0].querySelector('.nda>div+div dd').textContent,'ул. Ав***ая');
-assert.deepEqual(cards.slice(1).map(c=>c.querySelector('.nda>div+div dd').textContent),['ул. Баб***ая','ул. Авто****ая','ул. Реб***ая']);
+assert(cards[0].querySelector('.nda dd').textContent.includes('Многоквартирные дома'));assert.equal(cards[0].querySelector('.nda>div+div dd').textContent,'ул. Ав****ая');
+assert.deepEqual(cards.slice(1).map(c=>c.querySelector('.nda>div+div dd').textContent),['ул. Баб****ая','ул. Авто****ая','ул. Реб****ая']);
 assert(cards[1].textContent.includes('Многоквартирный жилой дом с подземной автостоянкой'));
 assert(cards[2].textContent.includes('со встроенно-пристроенными помещениями'));
 assert(cards[3].textContent.includes('Офисный центр с подземным паркингом'));
