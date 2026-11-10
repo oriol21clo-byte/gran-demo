@@ -1,0 +1,37 @@
+import {Engine} from '../../work/babylon/node_modules/@babylonjs/core/Engines/engine.js';
+import {Scene} from '../../work/babylon/node_modules/@babylonjs/core/scene.js';
+import {Vector3,Matrix} from '../../work/babylon/node_modules/@babylonjs/core/Maths/math.vector.js';
+import {Color3,Color4} from '../../work/babylon/node_modules/@babylonjs/core/Maths/math.color.js';
+import {FreeCamera} from '../../work/babylon/node_modules/@babylonjs/core/Cameras/freeCamera.js';
+import {Camera} from '../../work/babylon/node_modules/@babylonjs/core/Cameras/camera.js';
+import {HemisphericLight} from '../../work/babylon/node_modules/@babylonjs/core/Lights/hemisphericLight.js';
+import {DirectionalLight} from '../../work/babylon/node_modules/@babylonjs/core/Lights/directionalLight.js';
+import {SpotLight} from '../../work/babylon/node_modules/@babylonjs/core/Lights/spotLight.js';
+import {Mesh} from '../../work/babylon/node_modules/@babylonjs/core/Meshes/mesh.js';
+import {VertexData} from '../../work/babylon/node_modules/@babylonjs/core/Meshes/mesh.vertexData.js';
+import {MeshBuilder} from '../../work/babylon/node_modules/@babylonjs/core/Meshes/meshBuilder.js';
+import {StandardMaterial} from '../../work/babylon/node_modules/@babylonjs/core/Materials/standardMaterial.js';
+import {DynamicTexture} from '../../work/babylon/node_modules/@babylonjs/core/Materials/Textures/dynamicTexture.js';
+import {Layer} from '../../work/babylon/node_modules/@babylonjs/core/Layers/layer.js';
+import {ShadowGenerator} from '../../work/babylon/node_modules/@babylonjs/core/Lights/Shadows/shadowGenerator.js';
+import {ShadowOnlyMaterial} from '../../work/babylon/node_modules/@babylonjs/materials/shadowOnly/shadowOnlyMaterial.js';
+import '../../work/babylon/node_modules/@babylonjs/core/Meshes/thinInstanceMesh.js';
+import '../../work/babylon/node_modules/@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent.js';
+const canvas=document.querySelector('canvas'),engine=new Engine(canvas,true,{preserveDrawingBuffer:true,stencil:true});engine.setSize(1180,621);const scene=new Scene(engine);scene.useRightHandedSystem=true;scene.clearColor=new Color4(.85,.87,.89,1);scene.ambientColor=new Color3(.06,.06,.06);
+const target=new Vector3(0,40.14,0),R=Math.hypot(132,122)/2,dist=R*3.3;
+const camera=new FreeCamera('camera',target.add(new Vector3(Math.sin(-2.35)*Math.sin(1.05)*dist,Math.cos(1.05)*dist,Math.cos(-2.35)*Math.sin(1.05)*dist)),scene);camera.setTarget(target);camera.mode=Camera.ORTHOGRAPHIC_CAMERA;const half=Math.tan(16*Math.PI/180)*dist;camera.orthoTop=half;camera.orthoBottom=-half;camera.orthoLeft=-half*1180/621;camera.orthoRight=half*1180/621;camera.minZ=.1;camera.maxZ=2000;
+const sky=new HemisphericLight('sky',new Vector3(0,1,0),scene);sky.groundColor=new Color3(.38,.42,.45);sky.intensity=.78;
+const sun=new DirectionalLight('sun',new Vector3(1.1,-3.2,-.85).normalize(),scene);sun.position=new Vector3(-120,330,100);sun.intensity=1.1;sun.shadowMinZ=1;sun.shadowMaxZ=800;
+const shadow=new ShadowGenerator(2048,sun);shadow.useBlurExponentialShadowMap=true;shadow.blurKernel=20;shadow.depthScale=25;shadow.bias=.0001;shadow.normalBias=.05;
+const fill=new HemisphericLight('fill',new Vector3(1,.3,-1),scene);fill.intensity=.14;
+const spots=[[-65,8,-55],[55,8,40]].map((p,i)=>{const pos=Vector3.FromArray(p),l=new SpotLight('wash'+i,pos,target.subtract(pos).normalize(),Math.PI*.6,2,scene);l.diffuse=new Color3(1,.77,.48);l.intensity=0;return l});
+const raw=await fetch('model.json.gz');const data=await new Response(raw.body.pipeThrough(new DecompressionStream('gzip'))).json();
+const groups=new Map(),materials=[];
+for(let oi=0;oi<data.objects.length;oi++){const o=data.objects[oi],d=data.materials[o.m],occ=d.glass?((oi*1664525+1013904223)%100<48?0:1):0,key=o.g+'_'+o.m+'_'+occ;if(!groups.has(key))groups.set(key,{g:o.g,m:o.m,occ,matrices:[]});groups.get(key).matrices.push(...o.matrix)}
+for(const [name,g] of groups){const desc=data.materials[g.m],m=new StandardMaterial(name,scene);m.diffuseColor=Color3.FromArray(desc.color).toGammaSpace();m.specularColor=new Color3(...(desc.glass?[.4,.45,.48]:[.08,.08,.08]));m.specularPower=desc.glass?70:35;m.backFaceCulling=false;m.maxSimultaneousLights=8;materials.push({m,desc,occ:g.occ});const geo=data.geometries[g.g],mesh=new Mesh(name,scene),vd=new VertexData();vd.positions=geo.positions;vd.indices=geo.index||Array.from({length:geo.positions.length/3},(_,i)=>i);vd.normals=[];VertexData.ComputeNormals(vd.positions,vd.indices,vd.normals,{useRightHandedSystem:true});vd.applyToMesh(mesh);mesh.material=m;mesh.thinInstanceSetBuffer('matrix',new Float32Array(g.matrices),16,true);mesh.receiveShadows=true;shadow.addShadowCaster(mesh);mesh.thinInstanceRefreshBoundingInfo(true);}
+const floor=MeshBuilder.CreateGround('shadow floor',{width:2000,height:2000},scene);floor.position.y=-1.25;floor.receiveShadows=true;const sm=new ShadowOnlyMaterial('contact',scene);sm.activeLight=sun;sm.alpha=.18;floor.material=sm;
+const texture=new DynamicTexture('gradient',{width:32,height:512},scene,false),layer=new Layer('background',null,scene,true);layer.texture=texture;
+window.setBabylonStudy=mode=>{const night=mode==='night';sky.intensity=night?.46:.95;sky.diffuse=night?new Color3(.52,.66,.86):new Color3(.96,.97,1);sky.groundColor=night?new Color3(.07,.1,.16):new Color3(.45,.49,.51);sun.intensity=night?.25:1.12;sun.diffuse=night?new Color3(.62,.76,1):new Color3(1,.97,.92);fill.intensity=night?.2:.25;fill.diffuse=night?new Color3(1,.76,.5):new Color3(.85,.9,1);spots.forEach(l=>l.intensity=night?.7:0);
+ for(const {m,desc,occ} of materials)if(desc.glass)m.emissiveColor=night&&occ?new Color3(.88,.68,.4):Color3.Black();
+ const x=texture.getContext(),gradient=x.createLinearGradient(0,0,0,512);gradient.addColorStop(0,night?'#0b1727':'#cbd5dc');gradient.addColorStop(1,night?'#2a4157':'#e3e7e9');x.fillStyle=gradient;x.fillRect(0,0,32,512);texture.update(true);scene.render();};
+window.setBabylonStudy('day');window.ready=true;document.querySelectorAll('button').forEach(b=>b.onclick=()=>window.setBabylonStudy(b.dataset.mode));
