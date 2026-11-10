@@ -49,3 +49,6 @@ h1,h2,h3{letter-spacing:-.035em}h2{font-size:clamp(29px,3vw,42px);line-height:1.
 #models .mc-act .btn::after{content:"↓";font-size:18px;line-height:1;color:#b7c9ed}
 #models .mc-act .btn:hover{background:#29415f;border-color:#29415f;box-shadow:0 4px 12px #17212e18}
 #models .mc-act .btn:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+
+/* Existing model columns: slightly clearer separators, same layout. */
+#models .models,#models .mcard+.mcard,#models .mcard .hd,#models .mcard dl{border-color:#bdc8d5}
