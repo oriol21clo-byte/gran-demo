@@ -49,3 +49,14 @@ h1,h2,h3{letter-spacing:-.035em}h2{font-size:clamp(29px,3vw,42px);line-height:1.
 #models .mc-act .btn::after{content:"↓";font-size:18px;line-height:1;color:#b7c9ed}
 #models .mc-act .btn:hover{background:#29415f;border-color:#29415f;box-shadow:0 4px 12px #17212e18}
 #models .mc-act .btn:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+
+/* Soft architectural project lighting; existing card grid is preserved. */
+#models .models,#models .mcard+.mcard,#models .mcard .hd,#models .mcard dl{border-color:#bdc8d5}
+.project-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.project-lighting{flex-shrink:0;background:#fff;border:1px solid var(--line);border-radius:7px;padding:3px}
+.project-lighting .tab{min-width:58px}
+.stage[data-light="night"]{background:#142132}
+.stage[data-light="night"] .prj-overlay strong,.stage[data-light="night"] .project-metrics strong{color:#edf2fa!important}
+.stage[data-light="night"] .prj-overlay span,.stage[data-light="night"] .project-metrics span{color:#aebdd0!important}
+.stage[data-light="night"] .nogl{color:#edf2fa}
+@media(max-width:760px){.project-heading{gap:8px}.project-heading h2{flex:1 0 100%}.project-heading .project-lighting{margin-bottom:4px}.stage[data-light="night"] .prj-overlay{background:#172536;border-color:#314154}}
