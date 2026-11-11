@@ -1,0 +1,21 @@
+{
+  "before": {
+    "width": 2135,
+    "height": 1217,
+    "moving": false,
+    "interacting": false
+  },
+  "moving": {
+    "width": 1146,
+    "height": 654,
+    "moving": true,
+    "interacting": true
+  },
+  "restored": {
+    "width": 2135,
+    "height": 1217,
+    "moving": false,
+    "interacting": false
+  },
+  "errors": []
+}

@@ -14,6 +14,11 @@ async function check(){
  const initialFrames=animationCallbacks.slice();
  const heroFrame=animationCallbacks[0], hc=renderers[0].camera;let clock=w.performance.now()+4000;heroFrame(clock);
  const angle=()=>Math.atan2(hc.position.x,hc.position.z-2);for(let i=0;i<300;i++)heroFrame(clock+=50);const start=angle();for(let i=0;i<60;i++)heroFrame(clock+=1000/60);const at60=angle();for(let i=0;i<120;i++)heroFrame(clock+=1000/120);const at120=angle();assert(Math.abs((at60-start)-.035)<.0015);assert(Math.abs((at120-at60)-.035)<.0015,'rotation speed independent of 60/120 Hz');
+ // Native resolution on 1x screens; temporary movement budget on high-DPI screens.
+ w.devicePixelRatio=1;assert.equal(w.granRenderScale(1180,675,false),1,'avoid forced 2x supersampling on 1x displays');
+ w.devicePixelRatio=2;const full=w.granRenderScale(1180,675,false),moving=w.granRenderScale(1180,675,false,true);
+ assert(full>moving);assert(1180*675*moving*moving<=750001);assert.equal(w.granRenderScale(1180,675,false),full,'full resolution is recoverable after movement');w.devicePixelRatio=1;
+ const cardFrame=animationCallbacks[1];cardFrame(clock+=50);const cardCamera=renderers[1].camera.position.clone();cardFrame(clock+=50);assert(!renderers[1].camera.position.equals(cardCamera),'project previews keep rotating');
  const cv=get().calcViewer;assert(cv.p,'calculator geometry built');if(cv.lv)cv.lv.grp.visible=false;
  // Regression: zero must not poison live geometry or camera; repeated increases recover.
  for(const area of [0,35000,0,12000]){const input=d.querySelector('#cArea');input.value=area;input.dispatchEvent(new w.Event('change',{bubbles:true}));
@@ -62,6 +67,11 @@ async function check(){
  const before=renderers.slice(0,6).map(r=>r.draws||0);d.querySelector('[data-open="1"]').click();
  const modalFrame=animationCallbacks.at(-1);initialFrames.forEach(cb=>cb(clock+=8.33));assert.deepEqual(renderers.slice(0,6).map(r=>r.draws||0),before,'background viewers pause in modal');
  const active=get().modalViewer;const count=active.r.draws||0;modalFrame(clock+=8.33);assert((active.r.draws||0)>count,'active modal still renders');
+ // Direct manipulation is allowed to render on every 60 Hz frame; idle rotation stays bounded.
+ active.interacting=true;const a0=active.r.draws||0;for(let i=0;i<60;i++)modalFrame(clock+=1000/60);const activeDraws=(active.r.draws||0)-a0;
+ active.interacting=false;active.interactionUntil=0;const i0=active.r.draws||0;for(let i=0;i<60;i++)modalFrame(clock+=1000/60);const idleDraws=(active.r.draws||0)-i0;
+ assert(activeDraws>=55,'manual interaction permits about 60 FPS');assert(idleDraws<=32&&activeDraws>idleDraws*1.6,'idle rotation keeps its lower budget');
+
  active.p.root.traverse(o=>assert.equal(o.matrixAutoUpdate,false,'static model transforms cached'));
  assert.equal(active.projectGround.material.color.getHex(),renderers[0].scene.getObjectByName('context-ground').material.color.getHex(),'shared lit ground colour');
  d.querySelector('#mClose').click();

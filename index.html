@@ -1012,10 +1012,11 @@ const MODE_DESC = {
   cim:[['Структура','Здание, этажи (IfcBuildingStorey), помещения (IfcSpace). Наведите на этаж'],['Атрибуты','Площади, объёмы, отметки. Нажмите на здание, чтобы открыть ТЭП'],['Дисциплины','АР — здания, ПС — участок и границы, БиО — озеленение']]
 };
 // Bound pixel and shadow budgets for the multiple simultaneous 3D views.
-function granRenderScale(w,h,preview){
-  const small=matchMedia('(max-width:760px)').matches;
-  const desired=small?1.75:2;
-  return Math.max(1,Math.min(desired,Math.sqrt((preview?1400000:2600000)/Math.max(1,w*h))));
+function granRenderScale(w,h,preview,moving=false){
+  const native=window.devicePixelRatio||1;
+  const desired=Math.min(native,moving?1:matchMedia('(max-width:760px)').matches?1.75:2);
+  const budget=moving?750000:preview?1400000:2600000;
+  return Math.max(moving?Math.min(.65,native):Math.min(1,native),Math.min(desired,Math.sqrt(budget/Math.max(1,w*h))));
 }
 let setMode = () => {};
 (function(){
@@ -1226,14 +1227,17 @@ let setMode = () => {};
   }
   $('#vinfo .x').addEventListener('click',()=>{$('#vinfo').style.display='none';clearSel()});
 
-  function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;if(!w||!h)return;renderer.setPixelRatio(granRenderScale(w,h,false));renderer.setSize(w,h,false);GranVisual.project(camera,w/h,radius);DEF.radius=w<560?300:235}
-  if(window.ResizeObserver)new ResizeObserver(resize).observe(wrap); window.addEventListener('resize',resize); resize(); radius=radiusT=DEF.radius;
+  let motionResolution=false,renderWidth=0,renderHeight=0,renderScale=0;
+  function resize(moving=false){const w=wrap.clientWidth,h=wrap.clientHeight;if(!w||!h)return;motionResolution=moving===true;const scale=granRenderScale(w,h,false,motionResolution);if(scale!==renderScale||w!==renderWidth||h!==renderHeight){renderer.setPixelRatio(scale);renderer.setSize(w,h,false);renderScale=scale;renderWidth=w;renderHeight=h;}GranVisual.project(camera,w/h,radius);DEF.radius=w<560?300:235}
+  if(window.ResizeObserver)new ResizeObserver(()=>resize(drag)).observe(wrap); window.addEventListener('resize',()=>resize(drag)); resize(); radius=radiusT=DEF.radius;
   setMode('vpm'); growT=1; gVPM.scale.y=1;
   let visible=true; if(window.IntersectionObserver)new IntersectionObserver(es=>{visible=es[0].isIntersecting}).observe(wrap);
   let autoMix=0;let prev=performance.now(), frames=0, lastRender=-Infinity;
   (function loop(now){requestAnimationFrame(loop);const dt=Math.min(100,now-prev);
     if(document.hidden||!$('#modal').hidden||(!visible&&frames>5))return;
-    if(now-lastRender<1000/30-1)return;lastRender=now;prev=now;
+    const active=drag||Math.abs(radiusT-radius)>.05||growT<1;
+    if(now-lastRender<1000/(active?60:30)-1)return;lastRender=now;prev=now;
+    if(active!==motionResolution)resize(active);
     if(drag)autoMix=0;else{const targetMix=now-lastAct>3500?1:0;autoMix+=(targetMix-autoMix)*(1-Math.exp(-dt/600));theta+=dt*.000035*autoMix;}
     radius+=(radiusT-radius)*(1-Math.exp(-dt/140));
     if(growG&&growT<1){growT=Math.min(1,growT+dt/650);growG.scale.y=Math.max(.001,1-Math.pow(1-growT,3))}
@@ -1676,14 +1680,16 @@ class Viewer {
     this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 6000);
     if (this.o.interactive && THREE.OrbitControls) {
       const k = this.ctl = new THREE.OrbitControls(this.cam, c); k.enableDamping = true; k.dampingFactor = .08; k.enableZoom = this.o.zoom; k.maxPolarAngle = Math.PI * .97; k.autoRotate = this.o.auto; k.autoRotateSpeed = .2;
-      k.addEventListener('start', () => { k.autoRotate = false; clearTimeout(this._t); if (this.o.auto) this._t = setTimeout(() => k.autoRotate = true, 7000) });
+      k.addEventListener('end',()=>{this.interacting=false;this.interactionUntil=performance.now()+650});
+      k.addEventListener('start', () => { this.interacting=true;k.autoRotate = false; clearTimeout(this._t); if (this.o.auto) this._t = setTimeout(() => k.autoRotate = true, 7000) });
     }
     this.theta = .8; this.visible = true; this.anim = null;
     if ('IntersectionObserver' in window) new IntersectionObserver(e => { this.visible = e[0].isIntersecting; this.dirty = true }).observe(el);
-    const rs = () => { const w = c.clientWidth || el.clientWidth, h = c.clientHeight || el.clientHeight; if (!w || !h) return; r.setPixelRatio(granRenderScale(w,h,!this.o.interactive)); r.setSize(w, h, false); GranVisual.project(this.cam,w/h,this.viewDistance||this.dist||235); this.dirty = true };
-    if ('ResizeObserver' in window) new ResizeObserver(rs).observe(el); addEventListener('resize', rs); rs();
+    const rs = (moving=false) => { const w = c.clientWidth || el.clientWidth, h = c.clientHeight || el.clientHeight; if (!w || !h) return; this._movingResolution=moving===true;const scale=granRenderScale(w,h,!this.o.interactive,this._movingResolution);if(scale!==this._renderScale||w!==this._renderWidth||h!==this._renderHeight){r.setPixelRatio(scale);r.setSize(w,h,false);this._renderScale=scale;this._renderWidth=w;this._renderHeight=h;} GranVisual.project(this.cam,w/h,this.viewDistance||this.dist||235); this.dirty = true };
+    const onResize=()=>rs(!!(this.interacting||performance.now()<this.interactionUntil||this.anim));
+    if ('ResizeObserver' in window) new ResizeObserver(onResize).observe(el); addEventListener('resize', onResize); rs();
     let prev = performance.now(), lastRender = -Infinity;
-    const loop = now => { requestAnimationFrame(loop); const dt = Math.min(100, now - prev); if (document.hidden || !this.visible || (el.id!=='modalStage'&&!$('#modal').hidden) || (el.id==='modalStage'&&$('#modal').hidden) || (!this.p && !this.lv)) return; if(now-lastRender<1000/30-1)return;lastRender=now;prev=now; this.tick(dt); if (this.dirty) { this.dirty = false; r.render(s, this.cam) } };
+    const loop = now => { requestAnimationFrame(loop); const dt = Math.min(100, now - prev); if (document.hidden || !this.visible || (el.id!=='modalStage'&&!$('#modal').hidden) || (el.id==='modalStage'&&$('#modal').hidden) || (!this.p && !this.lv)) return; const active=!!(this.interacting||now<this.interactionUntil||this.anim);if(now-lastRender<1000/(active?60:30)-1)return;lastRender=now;prev=now; if(active!==this._movingResolution)rs(active);this.tick(dt); if (this.dirty) { this.dirty = false; r.render(s, this.cam) } };
     requestAnimationFrame(loop);
   }
   setProject(spec, keepView) {
