@@ -813,7 +813,7 @@ body{background-image:none}
 <section id="projects">
   <div class="wrap">
     <div class="label">Проекты</div>
-    <h2>Наши проекты</h2>
+    <div class="project-heading"><h2>Наши проекты</h2><div class="tabs project-lighting" role="group" aria-label="Освещение проектов"><button class="tab" type="button" data-project-time="day" aria-pressed="true">День</button><button class="tab" type="button" data-project-time="night" aria-pressed="false">Ночь</button></div></div>
     <div class="projects" id="projList"></div>
   </div>
 </section>
@@ -970,6 +970,7 @@ body{background-image:none}
       <h3 id="mTitle">Проект</h3>
       <div class="views">
         <span class="cap project-mode">ВПМ · архитектурная модель</span>
+        <div class="tabs project-lighting" role="group" aria-label="Освещение модели"><button class="tab" type="button" data-project-time="day" aria-pressed="true">День</button><button class="tab" type="button" data-project-time="night" aria-pressed="false">Ночь</button></div>
         <div class="tabs" role="group" aria-label="Ракурс">
           <button class="tab" data-view="iso" aria-pressed="true">3D</button><button class="tab" data-view="front" aria-pressed="false">Фасад</button><button class="tab" data-view="side" aria-pressed="false">Сбоку</button><button class="tab" data-view="top" aria-pressed="false">Сверху</button><button class="tab" data-view="ground" aria-pressed="false">С земли</button>
         </div>
@@ -992,6 +993,7 @@ body{background-image:none}
 <script src="assets/vendor/three.r128.min.js"></script>
 <script src="assets/vendor/OrbitControls.r128.js"></script>
 <script src="assets/gran-visual.js"></script>
+<script src="assets/gran-project-lighting.js"></script>
 <script src="assets/reference-project.js"></script>
 <script src="assets/ryabinovaya-project.js"></script>
 <script src="assets/photo-tower-project.js"></script>
@@ -1690,10 +1692,15 @@ class Viewer {
     this.p = buildProject(spec); this.p.root.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false}); this.p.spec = spec; this.scene.add(this.p.root); this.setMode(this.mode);
     const R = this.p.radius, sun = this.sun; this.target = new THREE.Vector3(0, this.p.maxH * .45, 0);
     GranVisual.frame(this.lighting,R,this.target);
+    if(this.o.projectLighting&&window.GranProjectLighting){GranProjectLighting.prepare(this);this.setLighting(this.projectTime||'day')}
     this.dist = R * 3.3; this.clip(R);
     if (this.ctl) { this.ctl.target.copy(this.target); this.ctl.minZoom=.55;this.ctl.maxZoom=3.5 }
     if (!keepView || !this._placed) { this.cam.zoom=this.o.interactive?1:1.12;this.place(spec.reference==='ryabinovaya'?.8:spec.reference?-2.35:.8, 1.05, this.dist); this._placed = true }
     else { const sp = new THREE.Spherical().setFromVector3(this.cam.position.clone().sub(this.ctl ? this.ctl.target : this.target)); this.place(sp.theta, sp.phi, this.dist) }
+  }
+  setLighting(time) {
+    this.projectTime=time==='night'?'night':'day';this.el.dataset.light=this.projectTime;
+    if(!this.dead&&this.o.projectLighting&&window.GranProjectLighting)GranProjectLighting.apply(this,this.projectTime);
   }
   clip(R) { this.cam.near = Math.max(.5, R * .04); this.cam.far = Math.max(2000, R * 24); this.cam.updateProjectionMatrix() }
   place(theta, phi, rad) { const v = new THREE.Vector3().setFromSpherical(new THREE.Spherical(rad, phi, theta)); this.cam.position.copy(this.target).add(v); this.cam.lookAt(this.target);this.viewDistance=rad;GranVisual.project(this.cam,this.cam.aspect||1,rad); this.theta = theta; if (this.ctl) this.ctl.update(); this.dirty = true }
@@ -1713,7 +1720,7 @@ class Viewer {
     else if (this.ctl) { this.ctl.autoRotateSpeed = .2 * dt / (1000 / 60); this.ctl.dampingFactor = 1 - Math.exp(-dt / 180); if (this.ctl.update()) this.dirty = true }
     else if (this.o.auto) { this.theta += dt * .000035; this.place(this.theta, 1.05, this.dist) }
   }
-  setMode(m) { if(!this.o.modes.includes(m))m=this.o.modes[0];this.mode = m; this.dirty = true;if(this.projectGround)this.projectGround.visible=m==='vpm';if(this.lighting)GranVisual.apply(this.lighting,m);if(this.lv){this.lv.body.material.color.set(m==='npm'?0xC9BCA7:0xE6E9EE).convertSRGBToLinear();this.lv.seam.material.color.set(m==='npm'?0xB8A88E:0x1F4FBF).convertSRGBToLinear();} if (this.p) for (const k in this.p.g) this.p.g[k].visible = !(this.lv && this.lv.grp.visible && !this.lv.reveal) && k === m }
+  setMode(m) { if(!this.o.modes.includes(m))m=this.o.modes[0];this.mode = m; this.dirty = true;if(this.projectGround)this.projectGround.visible=m==='vpm';if(this.lighting)GranVisual.apply(this.lighting,m);if(this.o.projectLighting&&window.GranProjectLighting)GranProjectLighting.apply(this,this.projectTime||'day');if(this.lv){this.lv.body.material.color.set(m==='npm'?0xC9BCA7:0xE6E9EE).convertSRGBToLinear();this.lv.seam.material.color.set(m==='npm'?0xB8A88E:0x1F4FBF).convertSRGBToLinear();} if (this.p) for (const k in this.p.g) this.p.g[k].visible = !(this.lv && this.lv.grp.visible && !this.lv.reveal) && k === m }
   // Живой макет «как конструктор»: пока двигают площадь, этажи-блоки на лету падают сверху и встают друг на друга
   // или разбираются; корпуса плавно сдвигаются, участок растёт. Сцена не пересобирается, обновляются только инстансы.
   // Когда площадь перестаёт меняться, под макетом строится детальная модель, и блоки по этажам снизу вверх уступают ей место.
@@ -1810,11 +1817,19 @@ const PROJECTS = [
 function projectFacts(p){return p.facts.map(([a,b,note])=>`<div${note ? ` title="${note}"` : a==='—'?' title="Данные уточняются"':''}><strong>${a}</strong><span>${b}</span></div>`).join('')}
 let modalViewer = null;
 (function () {
-  const list = $('#projList');
+  const list = $('#projList'), projectViewers = new Set();
+  let projectTime='day';
+  const setProjectTime=time=>{
+    projectTime=time==='night'?'night':'day';
+    $$('[data-project-time]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.projectTime===projectTime)));
+    projectViewers.forEach(viewer=>viewer.setLighting(projectTime));
+    if(modalViewer)modalViewer.setLighting(projectTime);
+  };
+  $$('[data-project-time]').forEach(button=>button.addEventListener('click',()=>setProjectTime(button.dataset.projectTime)));
   list.innerHTML = PROJECTS.map((p, i) => `<article class="prj"><div class="stage" data-i="${i}"><div class="prj-overlay">${projectFacts(p)}</div></div><div class="body"><dl class="nda"><div><dt>Объект:</dt><dd>${p.address ? p.title : PROJECT_OBJECT_NAMES[i]}</dd></div>${p.address ? `<div><dt>Адрес:</dt><dd>${p.address}</dd></div>` : ''}</dl><button class="btn btn-ghost btn-sm" data-open="${i}">Открыть в 3D <span aria-hidden="true">↗</span></button></div></article>`).join('');
   $$('.prj .stage', list).forEach(st => {
     let viewer;
-    const start=()=>{if(viewer)return;viewer=new Viewer(st,{interactive:false,auto:true,modes:['vpm']});viewer.setProject(PROJECTS[+st.dataset.i].spec)};
+    const start=()=>{if(viewer)return;viewer=new Viewer(st,{interactive:false,auto:true,modes:['vpm'],projectLighting:true});projectViewers.add(viewer);viewer.projectTime=projectTime;viewer.setProject(PROJECTS[+st.dataset.i].spec);viewer.setLighting(projectTime)};
     if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){observer.disconnect();start()}},{rootMargin:'180px'});observer.observe(st)}else start();
     st.addEventListener('click',()=>{start();openProject(+st.dataset.i)});
   });
@@ -1822,8 +1837,8 @@ let modalViewer = null;
   const modal = $('#modal'); let lastFocus = null;
   function openProject(i) {
     lastFocus = document.activeElement; modal.hidden = false; document.body.style.overflow = 'hidden'; $('#mTitle').textContent = PROJECTS[i].address ? PROJECTS[i].address+' · '+PROJECTS[i].title : 'Реконструкция по изображениям · '+PROJECT_OBJECT_NAMES[i];$('#modalMetrics').innerHTML=projectFacts(PROJECTS[i]);
-    if (!modalViewer) { modalViewer = new Viewer($('#modalStage'), { interactive: true, zoom: true, auto: true, modes: ['vpm'] }) }
-    modalViewer.mode = 'vpm'; modalViewer._placed = false; modalViewer.setProject(PROJECTS[i].spec);
+    if (!modalViewer) { modalViewer = new Viewer($('#modalStage'), { interactive: true, zoom: true, auto: true, modes: ['vpm'], projectLighting: true }) }
+    modalViewer.projectTime=projectTime;modalViewer.mode = 'vpm'; modalViewer._placed = false; modalViewer.setProject(PROJECTS[i].spec);modalViewer.setLighting(projectTime);
     $$('[data-view]', modal).forEach(x => x.setAttribute('aria-pressed', String(x.dataset.view === 'iso'))); $('#mClose').focus();
   }
   const close = () => { modal.hidden = true; document.body.style.overflow = ''; if (document.fullscreenElement) document.exitFullscreen(); lastFocus && lastFocus.focus() };
