@@ -12,6 +12,7 @@ for(const [i,p] of ctx.PROJECTS.entries()){
   const roofHits=[-8,-2,4,10].map(z=>{const h=new THREE.Raycaster(new THREE.Vector3(-6.65,90,z),new THREE.Vector3(0,-1,0)).intersectObject(m.root,true);assert(h.length,'roof blade exists');return h[0].point.y});
   assert(roofHits.every(y=>y>76&&y<m.maxH),'four roof faces stand below brown crown');
   const shoulderHit=new THREE.Raycaster(new THREE.Vector3(-2,90,12.9),new THREE.Vector3(0,-1,0)).intersectObject(m.root,true);assert(shoulderHit.length&&shoulderHit[0].point.y>77,'raised white shoulder exists');
+  for(const side of [-1,1]){const hit=new THREE.Raycaster(new THREE.Vector3(-4,71,side*20),new THREE.Vector3(0,0,-side)).intersectObject(m.root,true);assert(hit.length&&hit[0].distance<7,'upper storey end wall closes the recess on both sides');}
   const roomHit=new THREE.Raycaster(new THREE.Vector3(-3,90,0),new THREE.Vector3(0,-1,0)).intersectObject(m.root,true);assert(roomHit.length&&roomHit[0].point.y>82,'service room projects in front of narrow brown roof');
   // The forward roof is a clear wedge; blades must not occupy it.
   for(const [x,z] of [[-11,9],[-9,-1]]){const h=new THREE.Raycaster(new THREE.Vector3(x,90,z),new THREE.Vector3(0,-1,0)).intersectObject(m.root,true);assert(h.length&&h[0].point.y<67,'triangular roof terrace is unobstructed');}

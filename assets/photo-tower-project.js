@@ -75,6 +75,11 @@
   solid([[-4.7,-5.3],[.3,-5.3],[.3,5.3],[-4.7,5.3]],79.5,2.8,M.brown);
   box(M.roof,-2.2,82.34,0,4.65,.12,10.25);
   // Raised white U-shaped shoulder behind the four dark faces.
+  // This is an enclosed upper storey, not a canopy over an open recess.
+  // Keep the dark front panels/glazed slots exposed, close the core and ends.
+  const upperBase=whiteTop,upperCeiling=77.4,upperHeight=upperCeiling-upperBase;
+  box(M.white,-2.85,upperBase+upperHeight/2,0,5.9,upperHeight,27.0);
+  for(const z of [-13.5,13.5])box(M.white,-3.8,upperBase+upperHeight/2,z,7.8,upperHeight,.25);
   const shoulder=[[-7.7,-13.8],[.1,-13.8],[.1,13.8],[-7.7,13.8]];
   solid(shoulder,77.4,.45,M.white);
   box(M.white,-.30,79.5,0,.30,3.3,27.4);
