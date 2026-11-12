@@ -30,7 +30,7 @@
   function brickBox(x,y,z,w,h,d){const G=new T.BoxGeometry(w,h,d),uv=G.attributes.uv;for(let f=0;f<6;f++){const uw=f<2?d:w,vh=f===2||f===3?d:h;for(let k=0;k<4;k++){const i=f*4+k;uv.setXY(i,uv.getX(i)*uw/2.4,uv.getY(i)*vh/1.2)}}geo.push(G);const o=new T.Mesh(G,M.brick);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;vpm.add(o);}
   const site=[[-31,-27],[27,-27],[32,20],[20,30],[-28,26]];
   solid(site,-.8,.8,M.roof,.5);polygon(site,.025,M.pave);
-  const brown={x:7,z:-.5,w:14,d:27,f:24,y0:6.2},whitePlan=[[-14,-12],[-.15,-12],[-.15,15],[-9,12],[-14,8]],FH=3.15,whiteFloors=19,whiteTop=66.05,brownTop=81.8;
+  const brown={x:3.5,z:-.5,w:7,d:27,f:24,y0:6.2},whitePlan=[[-8.5,-11.5],[-7.5,-13],[-.15,-13],[-.15,15],[-16,15]],FH=3.15,whiteFloors=19,whiteTop=66.05,brownTop=81.8;
   const podium=[[-17,-18],[18,-18],[18,16],[14,20],[-1,20],[-1,-10],[-17,-10]];
   solid(podium,.12,5.95,M.brick,1.3);solid(podium.map(([x,z])=>[x*1.065,z*1.065]),6.12,.3,M.roof,1.4);
   brickBox(brown.x,brown.y0+brown.f*FH/2,brown.z,brown.w,brown.f*FH,brown.d);
@@ -38,7 +38,7 @@
   // Exposed wedge-shaped roof and thin parapet follow the actual five-sided plan.
   polygon(whitePlan,whiteTop+.025,M.roof);
   whitePlan.forEach((a,i)=>{const b=whitePlan[(i+1)%whitePlan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);box(M.white,(a[0]+b[0])/2,whiteTop+.26,(a[1]+b[1])/2,L,.5,.18,-Math.atan2(dz,dx));});
-  const brownPlan=[[0,-14],[14,-14],[14,13],[0,13]];
+  const brownPlan=[[0,-14],[7,-14],[7,13],[0,13]];
   function windows(plan,floors,start,brownFacade){plan.forEach((a,i)=>{const b=plan[(i+1)%plan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=dz/L,nz=-dx/L,angle=-Math.atan2(dz,dx),margin=brownFacade?.7:1.25,n=Math.max(1,Math.floor((L-2*margin)/(brownFacade?2.25:2.7))),pitch=(L-2*margin)/n;
    for(let j=0;j<n;j++){const t=(margin+(j+.5)*pitch)/L,x=a[0]+dx*t,z=a[1]+dz*t,ww=pitch-(brownFacade?.95:.65);
     for(let f=0;f<floors;f++){const y=start+f*FH+FH/2,gm=brownFacade&&f>=19?upperGlass:glass[(j+Math.floor(f/3)+i)%glass.length];box(gm,x+nx*.10,y,z+nz*.10,ww,FH-.28,.14,angle);
@@ -60,30 +60,36 @@
    }
   });}
   windows(brownPlan,brown.f,brown.y0,true);windows(whitePlan,whiteFloors,6.2,false);
-  // White lower-storey entrances and stone panel joints remain exposed on the west/front.
-  for(const z of [-7,-1,5]){box(glass[1],-14.14,2.4,z,.12,4.2,1.8);for(const d of [-1,1])box(M.white,-14.28,2.5,z+d*1.0,.40,4.6,.16);box(M.white,-14.27,4.7,z,.42,.18,2.1);box(M.steel,-14.3,1.8,z,.07,.5,.06);}
-  for(let z=-10;z<8;z+=1.25)box(M.roof,-14.18,3,z,.016,5.8,.025);
+  // Entrances follow the oblique white elevation, not the old rectangular wall.
+  const tx=-7.5/Math.hypot(7.5,26.5),tz=26.5/Math.hypot(7.5,26.5),nx=-tz,nz=tx,doorAngle=-Math.atan2(tz,tx);
+  for(const z of [-7,-1,5]){const x=-16+(15-z)*7.5/26.5;
+   box(glass[1],x+nx*.14,2.4,z+nz*.14,1.8,4.2,.12,doorAngle);
+   for(const side of [-1,1])box(M.white,x+tx*side+nx*.28,2.5,z+tz*side+nz*.28,.16,4.6,.40,doorAngle);
+   box(M.white,x+nx*.28,4.7,z+nz*.28,2.1,.18,.42,doorAngle);
+  }
+  // A diagonal podium wing echoes the white facade's actual footprint.
+  const apron=[[-9,-16],[-6.9,-14.8],[-16,17],[-18,17]];
+  solid(apron,.12,5.95,M.brick,.35);solid(apron,6.12,.30,M.roof,.45);
   // Broad brick-base portal, glazing and slender entrance mullions.
   box(glass[3],7,2.3,20.04,10,3.9,.12);for(let x=2;x<=12;x+=1.25)box(M.bronze,x,2.3,20.15,.075,4.1,.2);box(M.brown,7,4.4,20.14,10.4,.18,.25);
   // Two projecting glazed bays on the brown wall, as visible in the close reference.
-  for(const z of [-1.6,1.3]){box(M.bronze,14.50,39.3,z,1.05,5.8,2.4);box(glass[2],15.05,39.3,z,.12,5.5,2.15);for(const y of [36.5,39.3,42.1])box(M.edge,15.14,y,z,.16,.1,2.4);}
+  for(const z of [-1.6,1.3]){box(M.bronze,7.50,39.3,z,1.05,5.8,2.4);box(glass[2],8.05,39.3,z,.12,5.5,2.15);for(const y of [36.5,39.3,42.1])box(M.edge,8.14,y,z,.16,.1,2.4);}
   // Brown roof coping, raised roof hatch and recessed grey roof plane.
-  box(M.roof,7,brownTop+.08,-.5,13.5,.15,26.5);
-  for(const x of [.04,13.96])box(M.brown,x,brownTop+.48,-.5,.28,.8,27.2);
-  for(const z of [-14.04,13.04])box(M.brown,7,brownTop+.48,z,14.2,.8,.28);
-  box(M.brown,7,brownTop+.50,-2.8,6,.8,5.4);box(M.roof,7,brownTop+.96,-2.8,5.6,.15,5);
-  // Five separate tall dark blades and glazed slots, visible in the roof view.
-  // Heights are estimated from the supplied silhouette, below the brown crown.
+  box(M.roof,3.5,brownTop+.08,-.5,6.5,.15,26.5);
+  for(const x of [.04,6.96])box(M.brown,x,brownTop+.48,-.5,.28,.8,27.2);
+  for(const z of [-14.04,13.04])box(M.brown,3.5,brownTop+.48,z,7.2,.8,.28);
+  box(M.brown,2.6,brownTop+.50,-.5,5,.8,10.6);box(M.roof,2.6,brownTop+.96,-.5,4.65,.15,10.25);
+  // Reference roof view: four broad dark faces in one row parallel to the
+  // long brown facade (Z), with narrow glazed slots and a triangular forecourt.
   const roofBlades=[];
-  for(let j=0;j<5;j++){
-   const x=-12+j*2.45,h=10.8+j*.80,top=whiteTop+h;roofBlades.push({x,top});
-   box(M.screen,x,whiteTop+h/2,-6,1.85,h,10.7);
-   box(M.frame,x,top+.07,-6,1.92,.14,10.85);
-   for(const side of [-1,1]){
-    box(M.edge,x+side*.87,whiteTop+h/2,-.57,.075,h,.16);
-    for(let z=-11;z<-.6;z+=.28)box(M.roof,x+side*.94,whiteTop+h/2,z,.04,h,.045);
-   }
-   if(j<4){box(glass[(j+2)%glass.length],x+1.22,whiteTop+h/2,-.60,.52,h-.3,.10);for(let y=whiteTop+.3;y<top;y+=3.15)box(M.frame,x+1.22,y,-.48,.56,.075,.15);}
+  for(let j=0;j<4;j++){
+   const x=-3.4,z=-10.35+j*6.85,h=11.7,top=whiteTop+h;roofBlades.push({x,z,top});
+   box(M.screen,x,whiteTop+h/2,z,3.8,h,5.9);
+   box(M.frame,x,top+.07,z,3.92,.14,6.0);
+   // The exposed front face is wide along Z; its fine ribs are vertical.
+   for(let off=-2.75;off<2.8;off+=.25)box(M.roof,x-1.93,whiteTop+h/2,z+off,.045,h,.045);
+   for(const side of [-1,1])box(M.edge,x-1.99,whiteTop+h/2,z+side*2.9,.14,h,.07);
+   if(j<3){const gz=z+3.42;box(glass[(j+2)%glass.length],x-1.77,whiteTop+h/2,gz,.10,h-.3,.78);for(let y=whiteTop+.3;y<top;y+=3.15)box(M.frame,x-1.85,y,gz,.15,.075,.82);}
   }
   // Angular planted beds, cut by the paved circulation network.
   const beds=[
@@ -129,7 +135,7 @@
   // Fine paving joints at the entrance plaza and low cylindrical site furniture.
   for(const [x,z] of [[-16,8],[-17,20],[20,-7],[18,23]])stamp(cylinder,M.steel,x,.5,z,.16,.95,.16);
   batches.forEach(({G,m,list})=>{const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=mesh.receiveShadow=true;vpm.add(mesh)});
-  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,roofScreen:true,roofBlades,whitePlan,portalDepth:.94,upperBrownBays:true,podiumOverhang:1.065,pergola:true,hangingRings:2,mixedPlanting:true};
+  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,roofScreen:true,roofBlades,bladeAxis:'z',obliqueWhiteFront:true,whitePlan,portalDepth:.94,upperBrownBays:true,podiumOverhang:1.065,pergola:true,hangingRings:2,mixedPlanting:true};
   return{root,g,radius:Math.max(Math.hypot(63,57)/2,82.6*.95),maxH:82.6};
  }
  global.GranPhotoTower={build};
