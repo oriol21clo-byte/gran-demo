@@ -17,18 +17,19 @@
   const glass=[0x99a9aa,0x7f949b,0xb4bdb5,0x879b82,0xa0ae87,0x647b87].map(c=>GranVisual.glass(material(c,{roughness:.32,metalness:.08})));
   const upperGlass=GranVisual.glass(material(0xd9e0da,{roughness:.28,metalness:.09}));
   const playSurface=material(0xbd9478,{roughness:1});
+  const podiumBrick=material(0xa48f80,{map:texture('brick'),roughness:.94});
   const plants=[0x6f895c,0x8ea27f,0xb4c0ad,0xa79461,0x96736a,0xa35142,0xc1b582,0xabc0a3].map(c=>material(c,{roughness:1,flatShading:true}));
   const unit=new T.BoxGeometry(1,1,1),ball=new T.IcosahedronGeometry(1,2),shrub=new T.IcosahedronGeometry(1,1),cylinder=new T.CylinderGeometry(1,1,1,8),cone=new T.ConeGeometry(1,1,6);geo.push(unit,ball,shrub,cylinder,cone);
   function stamp(G,m,x,y,z,sx,sy,sz,ry=0,q=null){let b=batches.get(G.uuid+':'+m.uuid);if(!b)batches.set(G.uuid+':'+m.uuid,b={G,m,list:[]});dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,ry,0);if(q)dummy.quaternion.copy(q);dummy.updateMatrix();b.list.push(dummy.matrix.clone());}
   const box=(m,x,y,z,w,h,d,a=0)=>stamp(unit,m,x,y,z,w,h,d,a);
   function branch(a,b,r){const va=new T.Vector3(...a),vb=new T.Vector3(...b),v=vb.clone().sub(va),mid=va.add(vb).multiplyScalar(.5),q=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),v.clone().normalize());stamp(cylinder,M.trunk,mid.x,mid.y,mid.z,r,v.length(),r,0,q);}
-  function shape(p,round=0){const s=new T.Shape();p.forEach(([x,z],i)=>{const a=p[(i+p.length-1)%p.length],b=p[(i+1)%p.length],pa=new T.Vector2(a[0]-x,a[1]-z).normalize().multiplyScalar(round),pb=new T.Vector2(b[0]-x,b[1]-z).normalize().multiplyScalar(round);i?s.lineTo(x+pa.x,-z-pa.y):s.moveTo(x+pa.x,-z-pa.y);s.quadraticCurveTo(x,-z,x+pb.x,-z-pb.y)});s.closePath();return s;}
+  function shape(p,round=0){const s=new T.Shape();p.forEach(([x,z],i)=>{const a=p[(i+p.length-1)%p.length],b=p[(i+1)%p.length],r=Array.isArray(round)?round[i]:round,pa=new T.Vector2(a[0]-x,a[1]-z).normalize().multiplyScalar(r),pb=new T.Vector2(b[0]-x,b[1]-z).normalize().multiplyScalar(r);i?s.lineTo(x+pa.x,-z-pa.y):s.moveTo(x+pa.x,-z-pa.y);s.quadraticCurveTo(x,-z,x+pb.x,-z-pb.y)});s.closePath();return s;}
   function solid(p,y,h,m,round=0,topSlope=0){const G=new T.ExtrudeGeometry(shape(p,round),{depth:h,bevelEnabled:false,curveSegments:8});G.rotateX(-Math.PI/2);const a=G.attributes.position,uv=G.attributes.uv;
    if(topSlope)for(let i=0;i<a.count;i++)if(a.getY(i)>h-.001)a.setY(i,h-Math.max(0,a.getZ(i))*topSlope);
-   if(m.map)for(let i=0;i<uv.count;i++)uv.setXY(i,a.getX(i)/2.4+a.getZ(i)/2.4,a.getY(i)/1.2);G.computeVertexNormals();geo.push(G);const o=new T.Mesh(G,m);o.position.y=y;o.castShadow=o.receiveShadow=true;vpm.add(o);return o;
+   if(m.map){const k=m===podiumBrick?2:1;for(let i=0;i<uv.count;i++)uv.setXY(i,k*(a.getX(i)+a.getZ(i))/2.4,k*a.getY(i)/1.2);}G.computeVertexNormals();geo.push(G);const o=new T.Mesh(G,m);o.position.y=y;o.castShadow=o.receiveShadow=true;vpm.add(o);return o;
   }
   function polygon(p,y,m){const G=new T.ShapeGeometry(shape(p));G.rotateX(-Math.PI/2);const a=G.attributes.position,uv=G.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,a.getX(i)/2.4,a.getZ(i)/1.2);geo.push(G);const o=new T.Mesh(G,m);o.position.y=y;o.receiveShadow=true;vpm.add(o);}
-  function brickBox(x,y,z,w,h,d){const G=new T.BoxGeometry(w,h,d),uv=G.attributes.uv;for(let f=0;f<6;f++){const uw=f<2?d:w,vh=f===2||f===3?d:h;for(let k=0;k<4;k++){const i=f*4+k;uv.setXY(i,uv.getX(i)*uw/2.4,uv.getY(i)*vh/1.2)}}geo.push(G);const o=new T.Mesh(G,M.brick);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;vpm.add(o);}
+  function brickBox(x,y,z,w,h,d,angle=0,mat=M.brick){const G=new T.BoxGeometry(w,h,d),uv=G.attributes.uv,mul=mat===podiumBrick?2:1;for(let f=0;f<6;f++){const uw=f<2?d:w,vh=f===2||f===3?d:h;for(let k=0;k<4;k++){const i=f*4+k;uv.setXY(i,uv.getX(i)*uw*mul/2.4,uv.getY(i)*vh*mul/1.2)}}geo.push(G);const o=new T.Mesh(G,mat);o.position.set(x,y,z);o.rotation.y=angle;o.castShadow=o.receiveShadow=true;vpm.add(o);}
   const site=[[16.14,-19.34],[8.86,32.95],[-33.99,27.57],[-37.67,-27.14],[-14.42,-25.8],[-13.81,-23.08]];
   solid(site,-.8,.8,M.roof,.5);polygon(site,.025,M.pave);
   // Broad diagonal circulation and small play pad traced in the reference view.
@@ -45,8 +46,15 @@
   // Three shallow facets give the white front its slight turn in plan.
   // The brown rear bar stays straight and vertical.
   const brown={x:3.5,z:-.5,w:7,d:27,f:24,y0:6.2},whitePlan=[[-8.5,-11.5],[-7.5,-13],[-.15,-13],[-.15,15],[-16,15],[-15,6.2],[-12.5,-2.6]],FH=3.15,whiteFloors=19,whiteTop=66.05,brownTop=81.8;
-  const podium=[[0,-16],[8.8,-16],[8.8,16],[-18.7,17],[-18.7,14],[-17.3,6.2],[-14.7,-2.6],[-10.5,-12.2],[0,-12.2]];
-  solid(podium,.12,5.95,M.brick,.42);solid(podium.map(([x,z])=>[x*1.025,z*1.025]),6.12,.3,M.roof,.50);
+  // A full projecting low building, with a broad roof terrace and a soft
+  // right-hand return; it must read separately from the tower's brick skirt.
+  const podium=[[0,-16],[8.8,-16],[8.8,16],[-18.7,17],[-22.5,14.3],[-22.8,11.7],[-21.9,5.8],[-19.6,-3.2],[-15,-13.5],[0,-13.5]],podiumRound=[.25,.35,.35,1.2,2.0,1.2,.6,.5,.8,.25];
+  solid(podium,.12,5.95,podiumBrick,podiumRound);
+  solid(podium.map(([x,z])=>[x*1.025,z*1.025]),6.12,.3,M.roof,podiumRound.map(r=>r+.12));
+  const podiumFront=[[-15,-13.5],[-19.6,-3.2],[-21.9,5.8],[-22.8,11.7]];
+  for(let i=0;i<podiumFront.length-1;i++){const a=podiumFront[i],b=podiumFront[i+1],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=-dz/L,nz=dx/L,angle=-Math.atan2(dz,dx),n=Math.max(1,Math.round(L/4.4));
+   for(let j=0;j<n;j++){const t=(j+.55)/n,x=a[0]+dx*t+nx*.14,z=a[1]+dz*t+nz*.14;brickBox(x,3.06,z,.48,5.88,.44,angle,podiumBrick);}
+  }
   brickBox(brown.x,brown.y0+brown.f*FH/2,brown.z,brown.w,brown.f*FH,brown.d);
   solid(whitePlan,.12,whiteTop-.12,M.white,.18);
   // Exposed wedge-shaped roof and thin parapet follow the actual five-sided plan.
@@ -151,7 +159,7 @@
   const ringG=new T.TorusGeometry(.72,.10,10,36);geo.push(ringG);const smaller=new T.TorusGeometry(.54,.09,10,32);geo.push(smaller);
   stamp(ringG,M.light,px-2.7,2.35,pz+2.65,1,1,1);stamp(smaller,M.light,px+3.1,2.2,pz+2.65,1,1,1);
   for(const x of [px-2.7,px+3.1])box(M.steel,x,3.45,pz+2.65,.025,.8,.025);
-  for(const [x,z] of [[-14,13],[-12,15],[-10,17]])stamp(ball,M.light,x,.4,z,.65,.35,.45);
+  for(const [x,z] of [[-27,8],[-26,10],[-25,12]])stamp(ball,M.light,x,.4,z,.65,.35,.45);
   for(const [x,z] of [[-28,14],[-17,15],[-21,9]])stamp(cylinder,M.light,x,.45,z,.28,.8,.28);
   function bench(x,z,angle=0){for(let j=0;j<5;j++)box(M.wood,x,.65,z+(j-2)*.14,2.4,.08,.12,angle);for(const d of [-.9,.9])box(M.steel,x+d,.35,z,.08,.6,.6,angle);for(let j=0;j<3;j++)box(M.wood,x,1.0+j*.13,z-.36,2.4,.10,.08,angle);}
   bench(-24,-18,.5);bench(-22,-8,.5);bench(-20,22);bench(9,-9);

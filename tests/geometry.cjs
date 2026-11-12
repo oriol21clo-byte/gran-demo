@@ -20,6 +20,8 @@ for(const [i,p] of ctx.PROJECTS.entries()){
   const whiteBody=m.g.vpm.children.find(o=>o.isMesh&&!o.isInstancedMesh&&o.geometry.type==='ExtrudeGeometry'&&new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()).y>60);assert(whiteBody,'white facade volume exists');
   const facetNormals=[-7,0,10].map(z=>{const hit=new THREE.Raycaster(new THREE.Vector3(-30,30,z),new THREE.Vector3(1,0,0)).intersectObject(whiteBody);assert(hit.length,'faceted front is closed');return hit[0].face.normal;});assert(facetNormals[0].dot(facetNormals[1])<.998&&facetNormals[1].dot(facetNormals[2])<.998,'three front facets turn gradually in plan');
   assert(tris<300000&&meshes<100,'refined tower and landscape stay within geometry/draw budget');
+  const podiumRoof=new THREE.Raycaster(new THREE.Vector3(-21,20,4),new THREE.Vector3(0,-1,0)).intersectObject(m.root,true);assert(podiumRoof.length&&podiumRoof[0].point.y>6&&podiumRoof[0].point.y<7,'projecting podium has its own roof in front of the tower');
+  const podiumWall=new THREE.Raycaster(new THREE.Vector3(-40,3,4),new THREE.Vector3(1,0,0)).intersectObject(m.root,true);assert(podiumWall.length&&podiumWall[0].point.x<-21,'projecting podium is closed down to ground level');
  }
  if(i===2){assert.deepEqual(Object.keys(m.g),['vpm']);assert.equal(m.root.userData.reference.blocks,2);assert.equal(m.root.userData.reference.towers,2);assert.equal(m.maxH,99.45);assert(tris<650000,'twin-quarter geometry budget');assert(meshes<100,'instanced facade draw budget');
   const roofY=x=>{const hits=new THREE.Raycaster(new THREE.Vector3(x,130,-44),new THREE.Vector3(0,-1,0)).intersectObject(m.root,true);assert(hits.length,'tower roof hit');return hits[0].point.y};
