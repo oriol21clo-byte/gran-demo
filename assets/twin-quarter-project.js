@@ -83,7 +83,8 @@
    });
    // Outer elevation: four distinct adjoining sections, including ribbed ends.
    [[-42,11,'grid'],[-17,14,'ribs'],[9,10,'grid'],[35,6,'ribs']].forEach(([z,f,kind],i)=>building(X(-24),z,14,24,f,cool?[M.mint,M.white,M.green,M.mint][i]:[M.pink,M.pink,M.red,M.red][i],kind));
-   tower(X(24),-44,mirror);
+   // The reference street view has the high edges outside, descending inward.
+   tower(X(24),-44,-mirror);
    // Dark three-storey skirt below the tall tower, then street-facing infill.
    building(X(24),-34,14,43,3,cool?M.green:M.dark);
    building(X(24),2,14,27,cool?10:9,accent,'grid');
