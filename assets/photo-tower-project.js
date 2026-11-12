@@ -46,17 +46,20 @@
   // Three shallow facets give the white front its slight turn in plan.
   // The brown rear bar stays straight and vertical.
   const brown={x:3.5,z:-.5,w:7,d:27,f:24,y0:6.2},whitePlan=[[-8.5,-11.5],[-7.5,-13],[-.15,-13],[-.15,15],[-16,15],[-15,6.2],[-12.5,-2.6]],FH=3.15,whiteFloors=19,whiteTop=66.05,brownTop=81.8;
-  // A full projecting low building, with a broad roof terrace and a soft
-  // right-hand return; it must read separately from the tower's brick skirt.
-  const podium=[[0,-16],[8.8,-16],[8.8,16],[-18.7,17],[-22.5,14.3],[-22.8,11.7],[-21.9,5.8],[-19.6,-3.2],[-15,-13.5],[0,-13.5]],podiumRound=[.25,.35,.35,1.2,2.0,1.2,.6,.5,.8,.25];
+  // Reference podium: one straight front wall, square left roof projection,
+  // a recessed wall under that projection, and only a local right corner radius.
+  const podium=[[0,-16],[8.8,-16],[8.8,16],[-16.4,16],[-21.1,10.2],[-8.08,-10.8],[0,-10.8]],podiumRound=[0,0,0,0,.65,0,0];
+  // Visible leading-edge endpoints picked on the supplied 432x525 roof view:
+  // (103,328) and (235,416), projected onto this roof's plane for comparison.
+  const podiumRoofPlan=[[-.3,-16.5],[9.1,-16.5],[9.1,16.4],[-16.5,16.4],[-22.34,10.63],[-6.28,-15.31],[-.3,-15.31]];
   solid(podium,.12,5.95,podiumBrick,podiumRound);
-  solid(podium.map(([x,z])=>[x*1.025,z*1.025]),6.12,.3,M.roof,podiumRound.map(r=>r+.12));
-  const podiumFront=[[-15,-13.5],[-19.6,-3.2],[-21.9,5.8],[-22.8,11.7]];
-  for(let i=0;i<podiumFront.length-1;i++){const a=podiumFront[i],b=podiumFront[i+1],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=-dz/L,nz=dx/L,angle=-Math.atan2(dz,dx),n=Math.max(1,Math.round(L/4.4));
-   for(let j=0;j<n;j++){const t=(j+.55)/n,x=a[0]+dx*t+nx*.14,z=a[1]+dz*t+nz*.14;brickBox(x,3.06,z,.48,5.88,.44,angle,podiumBrick);}
-  }
+  solid(podiumRoofPlan,6.12,.3,M.roof,[0,0,0,0,.7,0,0]);
+  const pa=[-8.08,-10.8],pb=[-21.1,10.2],dx=pb[0]-pa[0],dz=pb[1]-pa[1],L=Math.hypot(dx,dz),nx=-dz/L,nz=dx/L,angle=-Math.atan2(dz,dx);
+  for(const t of [.13,.30,.47,.64])brickBox(pa[0]+dx*t+nx*.10,3.06,pa[1]+dz*t+nz*.10,.40,5.88,.30,angle,podiumBrick);
   brickBox(brown.x,brown.y0+brown.f*FH/2,brown.z,brown.w,brown.f*FH,brown.d);
-  solid(whitePlan,.12,whiteTop-.12,M.white,.18);
+  // The white tower starts above the podium. Extending its solid down to
+  // grade would incorrectly cover the recessed brick front with a white plinth.
+  solid(whitePlan,6.2,whiteTop-6.2,M.white,.18);
   // Exposed wedge-shaped roof and thin parapet follow the actual five-sided plan.
   polygon(whitePlan,whiteTop+.025,M.roof);
   whitePlan.forEach((a,i)=>{const b=whitePlan[(i+1)%whitePlan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);box(M.white,(a[0]+b[0])/2,whiteTop+.26,(a[1]+b[1])/2,L,.5,.18,-Math.atan2(dz,dx));});
