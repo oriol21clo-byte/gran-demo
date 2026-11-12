@@ -7,13 +7,13 @@
   const color=c=>new T.Color(c).convertSRGBToLinear();
   const material=(c,o={})=>{const m=new T.MeshStandardMaterial(Object.assign({color:color(c),roughness:.78,metalness:0},o));materials.push(m);return m};
   function texture(kind){const c=document.createElement('canvas');c.width=256;c.height=128;const x=c.getContext('2d');if(!x)return null;
-   x.fillStyle=kind==='brick'?'#3d2e28':'#b8bfbd';x.fillRect(0,0,256,128);
+   x.fillStyle=kind==='brick'?'#3d2e28':'#9ea6a5';x.fillRect(0,0,256,128);
    for(let row=0;row<8;row++)for(let col=-1;col<8;col++){const ox=col*48+(row%2)*24,oy=row*16;
-    x.fillStyle=kind==='brick'?['#674333','#6e4838','#614030','#754b37'][(row+col+8)%4]:['#c3c8c5','#ced1cb','#c8cdc9'][(row+col+8)%3];x.fillRect(ox+1,oy+1,46,14);
+    x.fillStyle=kind==='brick'?['#674333','#6e4838','#614030','#754b37'][(row+col+8)%4]:['#a9b0ad','#b9bdb8','#b0b7b2'][(row+col+8)%3];x.fillRect(ox+1,oy+1,46,14);
    }
    const tex=new T.CanvasTexture(c);tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.encoding=T.sRGBEncoding;tex.anisotropy=4;return tex;
   }
-  const M={white:material(0xe8e8df),edge:material(0xf2f0e7),brick:material(0xffffff,{map:texture('brick'),roughness:.94}),brown:material(0x583a2e),bronze:material(0x614333),frame:material(0x3a4448),screen:material(0x525e64),roof:material(0xbfc3c0),pave:material(0xffffff,{map:texture('pave'),roughness:1}),curb:material(0x7c654c),soil:material(0x687c57),wood:material(0xaf9272),steel:material(0x52605f),light:material(0xf1f0df),trunk:material(0x73624f)};
+  const M={white:material(0xe8e8df),edge:material(0xf2f0e7),brick:material(0xffffff,{map:texture('brick'),roughness:.94}),brown:material(0x583a2e),bronze:material(0x614333),frame:material(0x3a4448),screen:material(0x3f494e),roof:material(0x899290),pave:material(0xbbc0bd,{map:texture('pave'),roughness:1}),curb:material(0x7c654c),soil:material(0x687c57),wood:material(0xaf9272),steel:material(0x52605f),light:material(0xf1f0df),trunk:material(0x73624f)};
   const glass=[0x99a9aa,0x7f949b,0xb4bdb5,0x879b82,0xa0ae87,0x647b87].map(c=>GranVisual.glass(material(c,{roughness:.32,metalness:.08})));
   const upperGlass=GranVisual.glass(material(0xd9e0da,{roughness:.28,metalness:.09}));
   const plants=[0x6f895c,0x8ea27f,0xb4c0ad,0xa79461,0x96736a,0xa35142,0xc1b582,0xabc0a3].map(c=>material(c,{roughness:1,flatShading:true}));
@@ -28,18 +28,18 @@
   }
   function polygon(p,y,m){const G=new T.ShapeGeometry(shape(p));G.rotateX(-Math.PI/2);const a=G.attributes.position,uv=G.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,a.getX(i)/2.4,a.getZ(i)/1.2);geo.push(G);const o=new T.Mesh(G,m);o.position.y=y;o.receiveShadow=true;vpm.add(o);}
   function brickBox(x,y,z,w,h,d){const G=new T.BoxGeometry(w,h,d),uv=G.attributes.uv;for(let f=0;f<6;f++){const uw=f<2?d:w,vh=f===2||f===3?d:h;for(let k=0;k<4;k++){const i=f*4+k;uv.setXY(i,uv.getX(i)*uw/2.4,uv.getY(i)*vh/1.2)}}geo.push(G);const o=new T.Mesh(G,M.brick);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;vpm.add(o);}
-  const site=[[-31,-27],[27,-27],[32,20],[20,30],[-28,26]];
+  const site=[[-37,-27],[27,-27],[32,20],[20,30],[-35,26]];
   solid(site,-.8,.8,M.roof,.5);polygon(site,.025,M.pave);
   const brown={x:3.5,z:-.5,w:7,d:27,f:24,y0:6.2},whitePlan=[[-8.5,-11.5],[-7.5,-13],[-.15,-13],[-.15,15],[-16,15]],FH=3.15,whiteFloors=19,whiteTop=66.05,brownTop=81.8;
-  const podium=[[-17,-18],[18,-18],[18,16],[14,20],[-1,20],[-1,-10],[-17,-10]];
-  solid(podium,.12,5.95,M.brick,1.3);solid(podium.map(([x,z])=>[x*1.065,z*1.065]),6.12,.3,M.roof,1.4);
+  const podium=[[0,-16],[8.8,-16],[8.8,16],[-18.7,17],[-18.7,13.5],[-11.8,-10],[0,-10]];
+  solid(podium,.12,5.95,M.brick,.42);solid(podium.map(([x,z])=>[x*1.025,z*1.025]),6.12,.3,M.roof,.50);
   brickBox(brown.x,brown.y0+brown.f*FH/2,brown.z,brown.w,brown.f*FH,brown.d);
   solid(whitePlan,.12,whiteTop-.12,M.white,.18);
   // Exposed wedge-shaped roof and thin parapet follow the actual five-sided plan.
   polygon(whitePlan,whiteTop+.025,M.roof);
   whitePlan.forEach((a,i)=>{const b=whitePlan[(i+1)%whitePlan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);box(M.white,(a[0]+b[0])/2,whiteTop+.26,(a[1]+b[1])/2,L,.5,.18,-Math.atan2(dz,dx));});
   const brownPlan=[[0,-14],[7,-14],[7,13],[0,13]];
-  function windows(plan,floors,start,brownFacade){plan.forEach((a,i)=>{const b=plan[(i+1)%plan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=dz/L,nz=-dx/L,angle=-Math.atan2(dz,dx),margin=brownFacade?.7:1.25,n=Math.max(1,Math.floor((L-2*margin)/(brownFacade?2.25:2.7))),pitch=(L-2*margin)/n;
+  function windows(plan,floors,start,brownFacade){plan.forEach((a,i)=>{const b=plan[(i+1)%plan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=dz/L,nz=-dx/L,angle=-Math.atan2(dz,dx),margin=brownFacade?.7:1.25,n=Math.max(1,Math.floor((L-2*margin)/(brownFacade?2.25:4.1))),pitch=(L-2*margin)/n;
    for(let j=0;j<n;j++){const t=(margin+(j+.5)*pitch)/L,x=a[0]+dx*t,z=a[1]+dz*t,ww=pitch-(brownFacade?.95:.65);
     for(let f=0;f<floors;f++){const y=start+f*FH+FH/2,gm=brownFacade&&f>=19?upperGlass:glass[(j+Math.floor(f/3)+i)%glass.length];box(gm,x+nx*.10,y,z+nz*.10,ww,FH-.28,.14,angle);
      for(const k of [-1,1]){const px=x+dx/L*k*ww/2,pz=z+dz/L*k*ww/2;box(M.frame,px+nx*.16,y,pz+nz*.16,.055,FH-.20,.20,angle);box(M.frame,x+nx*.16,y+k*(FH-.28)/2,z+nz*.16,ww+.10,.055,.20,angle);}
@@ -60,41 +60,39 @@
    }
   });}
   windows(brownPlan,brown.f,brown.y0,true);windows(whitePlan,whiteFloors,6.2,false);
-  // Entrances follow the oblique white elevation, not the old rectangular wall.
-  const tx=-7.5/Math.hypot(7.5,26.5),tz=26.5/Math.hypot(7.5,26.5),nx=-tz,nz=tx,doorAngle=-Math.atan2(tz,tx);
-  for(const z of [-7,-1,5]){const x=-16+(15-z)*7.5/26.5;
-   box(glass[1],x+nx*.14,2.4,z+nz*.14,1.8,4.2,.12,doorAngle);
-   for(const side of [-1,1])box(M.white,x+tx*side+nx*.28,2.5,z+tz*side+nz*.28,.16,4.6,.40,doorAngle);
-   box(M.white,x+nx*.28,4.7,z+nz*.28,2.1,.18,.42,doorAngle);
-  }
-  // A diagonal podium wing echoes the white facade's actual footprint.
-  const apron=[[-9,-16],[-6.9,-14.8],[-16,17],[-18,17]];
-  solid(apron,.12,5.95,M.brick,.35);solid(apron,6.12,.30,M.roof,.45);
-  // Broad brick-base portal, glazing and slender entrance mullions.
-  box(glass[3],7,2.3,20.04,10,3.9,.12);for(let x=2;x<=12;x+=1.25)box(M.bronze,x,2.3,20.15,.075,4.1,.2);box(M.brown,7,4.4,20.14,10.4,.18,.25);
+  // Three entrance bays on the short exposed white end; the long face
+  // stands over the continuous brick podium seen in the roof reference.
+  for(const x of [-6.1,-3.65,-1.2]){box(glass[1],x,2.45,-13.10,1.5,4.1,.12);for(const side of [-1,1])box(M.white,x+side*.85,2.5,-13.2,.20,4.7,.35);box(M.white,x,4.75,-13.22,1.9,.22,.38);}
+  box(glass[3],3.5,2.35,-16.04,5.4,4.0,.12);for(let x=1;x<6.2;x+=1.05)box(M.bronze,x,2.35,-16.15,.065,4.1,.20);
   // Two projecting glazed bays on the brown wall, as visible in the close reference.
   for(const z of [-1.6,1.3]){box(M.bronze,7.50,39.3,z,1.05,5.8,2.4);box(glass[2],8.05,39.3,z,.12,5.5,2.15);for(const y of [36.5,39.3,42.1])box(M.edge,8.14,y,z,.16,.1,2.4);}
-  // Brown roof coping, raised roof hatch and recessed grey roof plane.
+  // Long narrow roof with a projecting central service enclosure: the
+  // outline reads as a U from above rather than a hatch on the rear roof.
   box(M.roof,3.5,brownTop+.08,-.5,6.5,.15,26.5);
-  for(const x of [.04,6.96])box(M.brown,x,brownTop+.48,-.5,.28,.8,27.2);
+  box(M.brown,6.96,brownTop+.48,-.5,.28,.8,27.2);
+  for(const [z,d] of [[-9.7,8.7],[9.2,7.6]])box(M.brown,.04,brownTop+.48,z,.28,.8,d);
   for(const z of [-14.04,13.04])box(M.brown,3.5,brownTop+.48,z,7.2,.8,.28);
-  box(M.brown,2.6,brownTop+.50,-.5,5,.8,10.6);box(M.roof,2.6,brownTop+.96,-.5,4.65,.15,10.25);
-  // Reference roof view: four broad dark faces in one row parallel to the
-  // long brown facade (Z), with narrow glazed slots and a triangular forecourt.
+  solid([[-4.7,-5.3],[.3,-5.3],[.3,5.3],[-4.7,5.3]],79.5,2.8,M.brown);
+  box(M.roof,-2.2,82.34,0,4.65,.12,10.25);
+  // Raised white U-shaped shoulder behind the four dark faces.
+  const shoulder=[[-7.7,-13.8],[.1,-13.8],[.1,13.8],[-7.7,13.8]];
+  solid(shoulder,77.4,.45,M.white);
+  box(M.white,-.30,79.5,0,.30,3.3,27.4);
+  for(const z of [-13.5,13.5])box(M.white,-3.8,79.5,z,7.8,3.3,.25);
   const roofBlades=[];
   for(let j=0;j<4;j++){
-   const x=-3.4,z=-10.35+j*6.85,h=11.7,top=whiteTop+h;roofBlades.push({x,z,top});
-   box(M.screen,x,whiteTop+h/2,z,3.8,h,5.9);
-   box(M.frame,x,top+.07,z,3.92,.14,6.0);
-   // The exposed front face is wide along Z; its fine ribs are vertical.
-   for(let off=-2.75;off<2.8;off+=.25)box(M.roof,x-1.93,whiteTop+h/2,z+off,.045,h,.045);
-   for(const side of [-1,1])box(M.edge,x-1.99,whiteTop+h/2,z+side*2.9,.14,h,.07);
-   if(j<3){const gz=z+3.42;box(glass[(j+2)%glass.length],x-1.77,whiteTop+h/2,gz,.10,h-.3,.78);for(let y=whiteTop+.3;y<top;y+=3.15)box(M.frame,x-1.85,y,gz,.15,.075,.82);}
+   const x=-6.65,z=-8+j*6,h=12.0,top=whiteTop+h;roofBlades.push({x,z,top});
+   box(M.screen,x,whiteTop+h/2,z,1.7,h,5.3);
+   box(M.frame,x,top+.06,z,1.78,.12,5.38);
+   // Broad dark planes with a cluster of thin vertical ribs on one edge.
+   for(const off of [1.45,1.65,1.85,2.05,2.25])box(M.roof,x-.88,whiteTop+h/2,z+off,.035,h,.035);
+   for(const side of [-1,1])box(M.edge,x-.94,whiteTop+h/2,z+side*2.62,.10,h,.055);
+   if(j<3){const gz=z+3;box(glass[(j+2)%glass.length],x-.75,whiteTop+h/2,gz,.10,h-.3,.62);for(let y=whiteTop+.3;y<top;y+=3.15)box(M.frame,x-.84,y,gz,.12,.065,.64);}
   }
   // Angular planted beds, cut by the paved circulation network.
   const beds=[
-   [[-29,-24],[-18,-24],[-18,-18],[-29,-16]], [[-29,-14],[-19,-16],[-19,-6],[-28,-3]],
-   [[-28,0],[-18,-3],[-18,5],[-28,8]], [[-28,19],[-15,20],[-9,26],[-27,24]],
+   [[-35,-24],[-18,-24],[-21,-18],[-35,-16]], [[-35,-14],[-31,-16],[-31,-6],[-35,-3]],
+   [[-35,0],[-18,-3],[-18,5],[-35,8]], [[-35,19],[-15,20],[-9,26],[-34,24]],
    [[-12,22],[-2,23],[3,28],[-6,28]], [[3,24],[15,24],[18,28],[7,28]],
    [[21,21],[29,18],[24,27],[20,28]], [[21,5],[29,2],[30,14],[21,18]],
    [[21,-9],[29,-12],[30,-1],[21,2]], [[19,-23],[27,-24],[28,-15],[20,-12]],
@@ -119,7 +117,7 @@
    for(let j=0;j<7;j++){const a=j*2.399,rad=.45+(j%3)*.35,ex=x+Math.cos(a)*rad,ez=z+Math.sin(a)*rad,ey=h+(j%3)*.5;branch([x,h*.65,z],[ex,ey,ez],.035);stamp(ball,plants[i%4===0?5:(i%4===1?4:(j%2?0:7))],ex,ey+.45,ez,.55+(j%2)*.16,.85,.62,j);}
   });
   // Pergola/play pavilion: slim posts, layered roof, timber platform, hanging white rings.
-  const px=-22,pz=13;
+  const px=-24.5,pz=-13.5;
   for(let i=0;i<28;i++)box(M.wood,px-5.4+i*.4,.18,pz,.37,.25,5.7);
   for(const x of [px-5.5,px,px+5.5])for(const z of [pz-2.8,pz+2.8])box(M.light,x,2.05,z,.09,3.8,.09);
   for(const x of [px-2.8,px+2.8]){box(M.roof,x,4.02,pz,5.8,.10,6.9);box(M.light,x,3.91,pz,5.8,.08,6.6);}
@@ -135,7 +133,7 @@
   // Fine paving joints at the entrance plaza and low cylindrical site furniture.
   for(const [x,z] of [[-16,8],[-17,20],[20,-7],[18,23]])stamp(cylinder,M.steel,x,.5,z,.16,.95,.16);
   batches.forEach(({G,m,list})=>{const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=mesh.receiveShadow=true;vpm.add(mesh)});
-  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,roofScreen:true,roofBlades,bladeAxis:'z',obliqueWhiteFront:true,whitePlan,portalDepth:.94,upperBrownBays:true,podiumOverhang:1.065,pergola:true,hangingRings:2,mixedPlanting:true};
+  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,continuousPodium:true,raisedRoofShoulder:true,projectingServiceRoom:true,roofScreen:true,roofBlades,bladeAxis:'z',obliqueWhiteFront:true,whitePlan,portalDepth:.94,upperBrownBays:true,podiumOverhang:1.065,pergola:true,hangingRings:2,mixedPlanting:true};
   return{root,g,radius:Math.max(Math.hypot(63,57)/2,82.6*.95),maxH:82.6};
  }
  global.GranPhotoTower={build};
