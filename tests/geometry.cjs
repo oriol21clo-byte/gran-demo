@@ -7,7 +7,11 @@ for(const [i,p] of ctx.PROJECTS.entries()){
  const m=ctx.build(p.spec);assert(m.root.userData.geo.length);let tris=0,meshes=0;
  m.root.updateMatrixWorld(true);m.root.traverse(o=>{if(!o.geometry)return;const a=o.geometry.attributes.position.array;assert(Array.from(a).every(Number.isFinite),'nonfinite mesh');if(o.isMesh){meshes++;tris+=(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3*(o.count||1)}if(o.isInstancedMesh)assert(Array.from(o.instanceMatrix.array).every(Number.isFinite),'bad instance');});
  if(i===0){assert.deepEqual(Object.keys(m.g),['vpm']);assert.equal(m.root.userData.reference.towers,6);assert(tris<600000,'reference geometry budget');assert(m.maxH>80&&m.maxH<100)}
- if(i===1){assert.deepEqual(Object.keys(m.g),['vpm']);const ref=m.root.userData.reference;assert(ref.brownWhiteTower&&ref.whitePortalMouldings&&ref.brickPodium&&ref.roofScreen&&ref.pergola&&ref.mixedPlanting);assert.equal(ref.hangingRings,2);assert(ref.estimated);assert(m.maxH>80&&m.maxH<85)}
+ if(i===1){assert.deepEqual(Object.keys(m.g),['vpm']);const ref=m.root.userData.reference;assert(ref.brownWhiteTower&&ref.whitePortalMouldings&&ref.brickPodium&&ref.roofScreen&&ref.pergola&&ref.mixedPlanting);assert.equal(ref.hangingRings,2);assert(ref.estimated);assert(m.maxH>80&&m.maxH<85);
+  const roofHits=[-12,-9.55,-7.10,-4.65,-2.20].map(x=>{const h=new THREE.Raycaster(new THREE.Vector3(x,90,-6),new THREE.Vector3(0,-1,0)).intersectObject(m.root,true);assert(h.length,'roof blade exists');return h[0].point.y});
+  assert(roofHits.every(y=>y>76&&y<m.maxH),'roof screen lies between white roof and brown crown');assert(roofHits[4]>roofHits[0]+2.5,'screen has separate stepped blade tops');
+  const relief=new THREE.Raycaster(new THREE.Vector3(-11.33125,6.25,-20),new THREE.Vector3(0,0,1)).intersectObject(m.root,true);assert(relief.length&&relief[0].point.z<-12.9,'white portal has deep geometric relief');
+ }
  if(i===2){assert.deepEqual(Object.keys(m.g),['vpm']);assert.equal(m.root.userData.reference.blocks,2);assert.equal(m.root.userData.reference.towers,2);assert.equal(m.maxH,99.45);assert(tris<650000,'twin-quarter geometry budget');assert(meshes<100,'instanced facade draw budget');
   const roofY=x=>{const hits=new THREE.Raycaster(new THREE.Vector3(x,130,-44),new THREE.Vector3(0,-1,0)).intersectObject(m.root,true);assert(hits.length,'tower roof hit');return hits[0].point.y};
   assert(roofY(-26)>roofY(-14)+8,'red tower high edge faces away from central passage');

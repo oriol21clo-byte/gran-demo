@@ -1,4 +1,4 @@
-/* Project 2: detailed reconstruction from the seven supplied views.
+/* Project 2: detailed reconstruction from the supplied reference views.
    Geometry and landscape positions are estimates; no survey dimensions supplied. */
 (function(global){
  'use strict';if(!global.THREE)return;const T=global.THREE;
@@ -15,6 +15,7 @@
   }
   const M={white:material(0xe8e8df),edge:material(0xf2f0e7),brick:material(0xffffff,{map:texture('brick'),roughness:.94}),brown:material(0x583a2e),bronze:material(0x614333),frame:material(0x3a4448),screen:material(0x525e64),roof:material(0xbfc3c0),pave:material(0xffffff,{map:texture('pave'),roughness:1}),curb:material(0x7c654c),soil:material(0x687c57),wood:material(0xaf9272),steel:material(0x52605f),light:material(0xf1f0df),trunk:material(0x73624f)};
   const glass=[0x99a9aa,0x7f949b,0xb4bdb5,0x879b82,0xa0ae87,0x647b87].map(c=>GranVisual.glass(material(c,{roughness:.32,metalness:.08})));
+  const upperGlass=GranVisual.glass(material(0xd9e0da,{roughness:.28,metalness:.09}));
   const plants=[0x6f895c,0x8ea27f,0xb4c0ad,0xa79461,0x96736a,0xa35142,0xc1b582,0xabc0a3].map(c=>material(c,{roughness:1,flatShading:true}));
   const unit=new T.BoxGeometry(1,1,1),ball=new T.IcosahedronGeometry(1,2),shrub=new T.IcosahedronGeometry(1,1),cylinder=new T.CylinderGeometry(1,1,1,8),cone=new T.ConeGeometry(1,1,6);geo.push(unit,ball,shrub,cylinder,cone);
   function stamp(G,m,x,y,z,sx,sy,sz,ry=0,q=null){let b=batches.get(G.uuid+':'+m.uuid);if(!b)batches.set(G.uuid+':'+m.uuid,b={G,m,list:[]});dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,ry,0);if(q)dummy.quaternion.copy(q);dummy.updateMatrix();b.list.push(dummy.matrix.clone());}
@@ -31,28 +32,31 @@
   solid(site,-.8,.8,M.roof,.5);polygon(site,.025,M.pave);
   const brown={x:7,z:-.5,w:14,d:27,f:24,y0:6.2},whitePlan=[[-14,-12],[-.15,-12],[-.15,15],[-9,12],[-14,8]],FH=3.15,whiteFloors=19,whiteTop=66.05,brownTop=81.8;
   const podium=[[-17,-18],[18,-18],[18,16],[14,20],[-1,20],[-1,-10],[-17,-10]];
-  solid(podium,.12,5.95,M.brick,1.3);solid(podium.map(([x,z])=>[x*1.035,z*1.035]),6.12,.3,M.roof,1.4);
+  solid(podium,.12,5.95,M.brick,1.3);solid(podium.map(([x,z])=>[x*1.065,z*1.065]),6.12,.3,M.roof,1.4);
   brickBox(brown.x,brown.y0+brown.f*FH/2,brown.z,brown.w,brown.f*FH,brown.d);
-  solid(whitePlan,.12,whiteTop,M.white,1.15,.10);
+  solid(whitePlan,.12,whiteTop-.12,M.white,.18);
+  // Exposed wedge-shaped roof and thin parapet follow the actual five-sided plan.
+  polygon(whitePlan,whiteTop+.025,M.roof);
+  whitePlan.forEach((a,i)=>{const b=whitePlan[(i+1)%whitePlan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);box(M.white,(a[0]+b[0])/2,whiteTop+.26,(a[1]+b[1])/2,L,.5,.18,-Math.atan2(dz,dx));});
   const brownPlan=[[0,-14],[14,-14],[14,13],[0,13]];
   function windows(plan,floors,start,brownFacade){plan.forEach((a,i)=>{const b=plan[(i+1)%plan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=dz/L,nz=-dx/L,angle=-Math.atan2(dz,dx),margin=brownFacade?.7:1.25,n=Math.max(1,Math.floor((L-2*margin)/(brownFacade?2.25:2.7))),pitch=(L-2*margin)/n;
    for(let j=0;j<n;j++){const t=(margin+(j+.5)*pitch)/L,x=a[0]+dx*t,z=a[1]+dz*t,ww=pitch-(brownFacade?.95:.65);
-    for(let f=0;f<floors;f++){const y=start+f*FH+FH/2,gm=glass[(j+Math.floor(f/3)+i)%glass.length];box(gm,x+nx*.10,y,z+nz*.10,ww,FH-.28,.14,angle);
+    for(let f=0;f<floors;f++){const y=start+f*FH+FH/2,gm=brownFacade&&f>=19?upperGlass:glass[(j+Math.floor(f/3)+i)%glass.length];box(gm,x+nx*.10,y,z+nz*.10,ww,FH-.28,.14,angle);
      for(const k of [-1,1]){const px=x+dx/L*k*ww/2,pz=z+dz/L*k*ww/2;box(M.frame,px+nx*.16,y,pz+nz*.16,.055,FH-.20,.20,angle);box(M.frame,x+nx*.16,y+k*(FH-.28)/2,z+nz*.16,ww+.10,.055,.20,angle);}
      box(M.frame,x+nx*.18,y-.22,z+nz*.18,ww,.055,.22,angle);if(!brownFacade)box(M.frame,x+nx*.18,y+.72,z+nz*.18,ww,.035,.20,angle);
-     if(brownFacade){box(M.brown,x+nx*.24,y-FH/2+.30,z+nz*.24,ww,.50,.20,angle);}
-     if(!brownFacade){box(M.white,x+nx*.25,y-FH/2+.06,z+nz*.25,pitch,.16,.46,angle);
+     if(brownFacade){box(M.brown,x+nx*.24,y-FH/2+.30,z+nz*.24,ww,.50,.20,angle);if(f>=19)for(const side of [-1,1])box(M.edge,x+dx/L*side*(ww/2-.08)+nx*.20,y,z+dz/L*side*(ww/2-.08)+nz*.20,.07,FH-.16,.14,angle);}
+     if(!brownFacade){box(M.frame,x+nx*.13,y-FH/2+.34,z+nz*.13,ww,.60,.10,angle);
       for(const side of [-1,1]){const px=x+dx/L*side*(ww/2+.19),pz=z+dz/L*side*(ww/2+.19);box(M.white,px+nx*.24,y,pz+nz*.24,.33,FH,.55,angle);}
      }
     }
     // Multi-step portal mouldings spanning three storeys on the white facades.
-    if(!brownFacade)for(let f=0;f<floors;f+=3){const gh=Math.min(3,floors-f)*FH;for(let layer=0;layer<4;layer++){const breadth=ww+.28+layer*.12,depth=.42-layer*.085,y=start+f*FH;
-      for(const side of [-1,1])box(M.edge,x+dx/L*side*breadth/2+nx*depth,y+gh/2,z+dz/L*side*breadth/2+nz*depth,.065,gh,.16,angle);
-      for(const yy of [y+.05,y+gh-.05])box(M.edge,x+nx*depth,yy,z+nz*depth,breadth,.07,.16,angle);
+    if(!brownFacade)for(let f=0;f<floors;f+=3){const gh=Math.min(3,floors-f)*FH;for(let layer=0;layer<4;layer++){const breadth=ww+.24+layer*.16,depth=.94-layer*.17,y=start+f*FH;
+      for(const side of [-1,1])box(M.edge,x+dx/L*side*breadth/2+nx*depth,y+gh/2,z+dz/L*side*breadth/2+nz*depth,.095,gh,.20,angle);
+      for(const yy of [y+.05,y+gh-.05])box(M.edge,x+nx*depth,yy,z+nz*depth,breadth,.105,.20,angle);
     }}
    }
-   if(brownFacade){for(let j=0;j<=n;j++){const t=(margin+j*pitch)/L;box(M.bronze,a[0]+dx*t+nx*.18,start+floors*FH/2,a[1]+dz*t+nz*.18,.27,floors*FH,.48,angle)}
-    for(let f=0;f<=floors;f++)box(M.brown,(a[0]+b[0])/2+nx*.2,start+f*FH,(a[1]+b[1])/2+nz*.2,L,.16+(f%4===0?.14:0),.5,angle);
+   if(brownFacade){for(let j=0;j<=n;j++){const t=(margin+j*pitch)/L;box(M.bronze,a[0]+dx*t+nx*.18,start+floors*FH/2,a[1]+dz*t+nz*.18,.38,floors*FH,.56,angle)}
+    for(let f=0;f<=floors;f++)if(f<19||f===floors)box(M.brown,(a[0]+b[0])/2+nx*.2,start+f*FH,(a[1]+b[1])/2+nz*.2,L,f%4===0?.28:.10,.40,angle);
    }
   });}
   windows(brownPlan,brown.f,brown.y0,true);windows(whitePlan,whiteFloors,6.2,false);
@@ -68,11 +72,19 @@
   for(const x of [.04,13.96])box(M.brown,x,brownTop+.48,-.5,.28,.8,27.2);
   for(const z of [-14.04,13.04])box(M.brown,7,brownTop+.48,z,14.2,.8,.28);
   box(M.brown,7,brownTop+.50,-2.8,6,.8,5.4);box(M.roof,7,brownTop+.96,-2.8,5.6,.15,5);
-  // Ribbed dark mechanical screen above the lower white wing.
-  box(M.screen,-7,whiteTop+3.2,-6,9.8,6.4,11);
-  for(let z=-11.5;z<=-.5;z+=.55)box(M.roof,-12.05,whiteTop+3.2,z,.13,6.5,.065);
-  for(let x=-11.7;x<=-2.3;x+=.55)box(M.roof,x,whiteTop+3.2,-.42,.065,6.5,.13);
-  for(const x of [-11.9,-8.65,-5.4,-2.15]){box(M.edge,x,whiteTop+3.25,-.25,.22,6.7,.25);box(M.frame,x,whiteTop+6.65,-6,.20,.13,11.5);}
+  // Five separate tall dark blades and glazed slots, visible in the roof view.
+  // Heights are estimated from the supplied silhouette, below the brown crown.
+  const roofBlades=[];
+  for(let j=0;j<5;j++){
+   const x=-12+j*2.45,h=10.8+j*.80,top=whiteTop+h;roofBlades.push({x,top});
+   box(M.screen,x,whiteTop+h/2,-6,1.85,h,10.7);
+   box(M.frame,x,top+.07,-6,1.92,.14,10.85);
+   for(const side of [-1,1]){
+    box(M.edge,x+side*.87,whiteTop+h/2,-.57,.075,h,.16);
+    for(let z=-11;z<-.6;z+=.28)box(M.roof,x+side*.94,whiteTop+h/2,z,.04,h,.045);
+   }
+   if(j<4){box(glass[(j+2)%glass.length],x+1.22,whiteTop+h/2,-.60,.52,h-.3,.10);for(let y=whiteTop+.3;y<top;y+=3.15)box(M.frame,x+1.22,y,-.48,.56,.075,.15);}
+  }
   // Angular planted beds, cut by the paved circulation network.
   const beds=[
    [[-29,-24],[-18,-24],[-18,-18],[-29,-16]], [[-29,-14],[-19,-16],[-19,-6],[-28,-3]],
@@ -117,7 +129,7 @@
   // Fine paving joints at the entrance plaza and low cylindrical site furniture.
   for(const [x,z] of [[-16,8],[-17,20],[20,-7],[18,23]])stamp(cylinder,M.steel,x,.5,z,.16,.95,.16);
   batches.forEach(({G,m,list})=>{const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=mesh.receiveShadow=true;vpm.add(mesh)});
-  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,roofScreen:true,pergola:true,hangingRings:2,mixedPlanting:true};
+  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,roofScreen:true,roofBlades,whitePlan,portalDepth:.94,upperBrownBays:true,podiumOverhang:1.065,pergola:true,hangingRings:2,mixedPlanting:true};
   return{root,g,radius:Math.max(Math.hypot(63,57)/2,82.6*.95),maxH:82.6};
  }
  global.GranPhotoTower={build};
