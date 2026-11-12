@@ -5,7 +5,7 @@ w.HTMLCanvasElement.prototype.getContext=()=>native2d;w.HTMLCanvasElement.protot
 w.matchMedia=()=>({matches:false});const pendingCards=[];w.IntersectionObserver=class{constructor(cb,options){this.cb=cb;this.options=options}observe(){if(this.options&&this.options.rootMargin)pendingCards.push(this.cb);else this.cb([{isIntersecting:true}])} disconnect(){}};w.ResizeObserver=class{observe(){} disconnect(){}};const animationCallbacks=[];w.requestAnimationFrame=cb=>{animationCallbacks.push(cb);return 0};w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=function(){};
 class Renderer{constructor(o){this.domElement=o.canvas;this.shadowMap={};renderers.push(this)}getContext(){return {}}setPixelRatio(){}setSize(){}render(s,c){this.draws=(this.draws||0)+1;s.updateMatrixWorld(true);c.updateMatrixWorld(true);this.scene=s;this.camera=c}}
 THREE.WebGLRenderer=Renderer;w.THREE=THREE;
-for(const p of ['assets/gran-visual.js','assets/gran-project-lighting.js','assets/reference-project.js','assets/ryabinovaya-project.js','assets/photo-tower-project.js'])w.eval(fs.readFileSync(p,'utf8'));
+for(const p of ['assets/gran-visual.js','assets/gran-project-lighting.js','assets/reference-project.js','assets/ryabinovaya-project.js','assets/photo-tower-project.js','assets/twin-quarter-project.js'])w.eval(fs.readFileSync(p,'utf8'));
 const errors=[];w.addEventListener('error',e=>errors.push(String(e.error)));
 for(const match of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)){let code=match[1];if(!code.trim())continue;if(code.includes('let calcViewer'))code+='\nwindow.__check={get:()=>({calcViewer,modalViewer,lastCalc,PROJECTS,buildProject,calcPrice,mats,setMode})};';w.eval(code)}
 const get=()=>w.__check.get();
