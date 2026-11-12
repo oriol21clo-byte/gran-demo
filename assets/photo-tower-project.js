@@ -16,6 +16,7 @@
   const M={white:material(0xe8e8df),edge:material(0xf2f0e7),brick:material(0xffffff,{map:texture('brick'),roughness:.94}),brown:material(0x583a2e),bronze:material(0x614333),frame:material(0x3a4448),screen:material(0x3f494e),roof:material(0x899290),pave:material(0xbbc0bd,{map:texture('pave'),roughness:1}),curb:material(0x7c654c),soil:material(0x687c57),wood:material(0xaf9272),steel:material(0x52605f),light:material(0xf1f0df),trunk:material(0x73624f)};
   const glass=[0x99a9aa,0x7f949b,0xb4bdb5,0x879b82,0xa0ae87,0x647b87].map(c=>GranVisual.glass(material(c,{roughness:.32,metalness:.08})));
   const upperGlass=GranVisual.glass(material(0xd9e0da,{roughness:.28,metalness:.09}));
+  const playSurface=material(0xbd9478,{roughness:1});
   const plants=[0x6f895c,0x8ea27f,0xb4c0ad,0xa79461,0x96736a,0xa35142,0xc1b582,0xabc0a3].map(c=>material(c,{roughness:1,flatShading:true}));
   const unit=new T.BoxGeometry(1,1,1),ball=new T.IcosahedronGeometry(1,2),shrub=new T.IcosahedronGeometry(1,1),cylinder=new T.CylinderGeometry(1,1,1,8),cone=new T.ConeGeometry(1,1,6);geo.push(unit,ball,shrub,cylinder,cone);
   function stamp(G,m,x,y,z,sx,sy,sz,ry=0,q=null){let b=batches.get(G.uuid+':'+m.uuid);if(!b)batches.set(G.uuid+':'+m.uuid,b={G,m,list:[]});dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,ry,0);if(q)dummy.quaternion.copy(q);dummy.updateMatrix();b.list.push(dummy.matrix.clone());}
@@ -28,10 +29,23 @@
   }
   function polygon(p,y,m){const G=new T.ShapeGeometry(shape(p));G.rotateX(-Math.PI/2);const a=G.attributes.position,uv=G.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,a.getX(i)/2.4,a.getZ(i)/1.2);geo.push(G);const o=new T.Mesh(G,m);o.position.y=y;o.receiveShadow=true;vpm.add(o);}
   function brickBox(x,y,z,w,h,d){const G=new T.BoxGeometry(w,h,d),uv=G.attributes.uv;for(let f=0;f<6;f++){const uw=f<2?d:w,vh=f===2||f===3?d:h;for(let k=0;k<4;k++){const i=f*4+k;uv.setXY(i,uv.getX(i)*uw/2.4,uv.getY(i)*vh/1.2)}}geo.push(G);const o=new T.Mesh(G,M.brick);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;vpm.add(o);}
-  const site=[[-37,-27],[27,-27],[32,20],[20,30],[-35,26]];
+  const site=[[16.14,-19.34],[8.86,32.95],[-33.99,27.57],[-37.67,-27.14],[-14.42,-25.8],[-13.81,-23.08]];
   solid(site,-.8,.8,M.roof,.5);polygon(site,.025,M.pave);
-  const brown={x:3.5,z:-.5,w:7,d:27,f:24,y0:6.2},whitePlan=[[-8.5,-11.5],[-7.5,-13],[-.15,-13],[-.15,15],[-16,15]],FH=3.15,whiteFloors=19,whiteTop=66.05,brownTop=81.8;
-  const podium=[[0,-16],[8.8,-16],[8.8,16],[-18.7,17],[-18.7,13.5],[-11.8,-10],[0,-10]];
+  // Broad diagonal circulation and small play pad traced in the reference view.
+  const pavingJoints=[
+   [[-13.58,-13.99],[-25.23,12.66]],[[-10.62,-10.81],[-21.95,16.27]],
+   [[-25.88,-16.44],[-16.85,-10.04]],[[-29.65,-10.4],[-19.33,-4.22]],
+   [[-34.12,1.09],[-23.19,7.4]],[[-34.77,11.15],[-24.99,18.81]],
+   [[-27.26,17.68],[-29.35,27.22]]
+  ];
+  for(const [a,b] of pavingJoints){const dx=b[0]-a[0],dz=b[1]-a[1];box(M.roof,(a[0]+b[0])/2,.046,(a[1]+b[1])/2,Math.hypot(dx,dz),.025,.10,-Math.atan2(dz,dx));}
+  const playPlan=[[-19.18,-19.49],[-16.83,-15.54],[-21.02,-10.75],[-24.79,-15.17]];
+  solid(playPlan,.04,.035,playSurface,.25);
+  for(const [x,z] of [[-19,-15],[-21.3,-16.8],[-20.2,-13.3],[-22.2,-14.5]])stamp(cylinder,M.light,x,.10,z,.28,.05,.28);
+  // Three shallow facets give the white front its slight turn in plan.
+  // The brown rear bar stays straight and vertical.
+  const brown={x:3.5,z:-.5,w:7,d:27,f:24,y0:6.2},whitePlan=[[-8.5,-11.5],[-7.5,-13],[-.15,-13],[-.15,15],[-16,15],[-15,6.2],[-12.5,-2.6]],FH=3.15,whiteFloors=19,whiteTop=66.05,brownTop=81.8;
+  const podium=[[0,-16],[8.8,-16],[8.8,16],[-18.7,17],[-18.7,14],[-17.3,6.2],[-14.7,-2.6],[-10.5,-12.2],[0,-12.2]];
   solid(podium,.12,5.95,M.brick,.42);solid(podium.map(([x,z])=>[x*1.025,z*1.025]),6.12,.3,M.roof,.50);
   brickBox(brown.x,brown.y0+brown.f*FH/2,brown.z,brown.w,brown.f*FH,brown.d);
   solid(whitePlan,.12,whiteTop-.12,M.white,.18);
@@ -39,7 +53,7 @@
   polygon(whitePlan,whiteTop+.025,M.roof);
   whitePlan.forEach((a,i)=>{const b=whitePlan[(i+1)%whitePlan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);box(M.white,(a[0]+b[0])/2,whiteTop+.26,(a[1]+b[1])/2,L,.5,.18,-Math.atan2(dz,dx));});
   const brownPlan=[[0,-14],[7,-14],[7,13],[0,13]];
-  function windows(plan,floors,start,brownFacade){plan.forEach((a,i)=>{const b=plan[(i+1)%plan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=dz/L,nz=-dx/L,angle=-Math.atan2(dz,dx),margin=brownFacade?.7:1.25,n=Math.max(1,Math.floor((L-2*margin)/(brownFacade?2.25:4.1))),pitch=(L-2*margin)/n;
+  function windows(plan,floors,start,brownFacade){plan.forEach((a,i)=>{const b=plan[(i+1)%plan.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=dz/L,nz=-dx/L,angle=-Math.atan2(dz,dx),frontFacet=!brownFacade&&i>=4,margin=brownFacade?.7:frontFacet?.22:1.25,n=frontFacet?2:Math.max(1,Math.floor((L-2*margin)/(brownFacade?2.25:4.1))),pitch=(L-2*margin)/n;
    for(let j=0;j<n;j++){const t=(margin+(j+.5)*pitch)/L,x=a[0]+dx*t,z=a[1]+dz*t,ww=pitch-(brownFacade?.95:.65);
     for(let f=0;f<floors;f++){const y=start+f*FH+FH/2,gm=brownFacade&&f>=19?upperGlass:glass[(j+Math.floor(f/3)+i)%glass.length];box(gm,x+nx*.10,y,z+nz*.10,ww,FH-.28,.14,angle);
      for(const k of [-1,1]){const px=x+dx/L*k*ww/2,pz=z+dz/L*k*ww/2;box(M.frame,px+nx*.16,y,pz+nz*.16,.055,FH-.20,.20,angle);box(M.frame,x+nx*.16,y+k*(FH-.28)/2,z+nz*.16,ww+.10,.055,.20,angle);}
@@ -78,30 +92,37 @@
   // This is an enclosed upper storey, not a canopy over an open recess.
   // Keep the dark front panels/glazed slots exposed, close the core and ends.
   const upperBase=whiteTop,upperCeiling=77.4,upperHeight=upperCeiling-upperBase;
-  box(M.screen,-2.85,upperBase+upperHeight/2,0,5.9,upperHeight,27.0);
+  const bow=z=>-1.8*(1-(z/14)**2),turn=z=>Math.atan(3.6*z/196);
+  const curvedEdge=(x,extent)=>[-extent,-7,0,7,extent].map(z=>[x+bow(z),z]);
+  solid([...curvedEdge(-5.8,13.5),[.1,13.5],[.1,-13.5]],upperBase,upperHeight,M.screen);
   for(const z of [-13.5,13.5])box(M.screen,-3.8,upperBase+upperHeight/2,z,7.8,upperHeight,.25);
-  const shoulder=[[-7.7,-13.8],[.1,-13.8],[.1,13.8],[-7.7,13.8]];
+  const shoulder=[...curvedEdge(-7.7,13.8),[.1,13.8],[.1,-13.8]];
   solid(shoulder,77.4,.45,M.white);
   box(M.white,-.30,79.5,0,.30,3.3,27.4);
   for(const z of [-13.5,13.5])box(M.white,-3.8,79.5,z,7.8,3.3,.25);
   const roofBlades=[];
   for(let j=0;j<4;j++){
-   const x=-6.65,z=-8+j*6,h=12.0,top=whiteTop+h;roofBlades.push({x,z,top});
-   box(M.screen,x,whiteTop+h/2,z,1.7,h,5.3);
-   box(M.frame,x,top+.06,z,1.78,.12,5.38);
+   const z=-8+j*6,x=-6.65+bow(z),a=turn(z),h=12.0,top=whiteTop+h;roofBlades.push({x,z,top,angle:a});
+   const panelBox=(m,lx,y,lz,w,hh,d)=>box(m,x+Math.cos(a)*lx+Math.sin(a)*lz,y,z-Math.sin(a)*lx+Math.cos(a)*lz,w,hh,d,a);
+   panelBox(M.screen,0,whiteTop+h/2,0,1.7,h,5.3);
+   panelBox(M.frame,0,top+.06,0,1.78,.12,5.38);
    // Broad dark planes with a cluster of thin vertical ribs on one edge.
-   for(const off of [1.45,1.65,1.85,2.05,2.25])box(M.roof,x-.88,whiteTop+h/2,z+off,.035,h,.035);
-   for(const side of [-1,1])box(M.edge,x-.94,whiteTop+h/2,z+side*2.62,.10,h,.055);
-   if(j<3){const gz=z+3;box(glass[(j+2)%glass.length],x-.75,whiteTop+h/2,gz,.10,h-.3,.62);for(let y=whiteTop+.3;y<top;y+=3.15)box(M.frame,x-.84,y,gz,.12,.065,.64);}
+   for(const off of [1.45,1.65,1.85,2.05,2.25])panelBox(M.roof,-.88,whiteTop+h/2,off,.035,h,.035);
+   for(const side of [-1,1])panelBox(M.edge,-.94,whiteTop+h/2,side*2.62,.10,h,.055);
+   if(j<3){const gz=z+3,gx=-7.4+bow(gz),ga=turn(gz);box(glass[(j+2)%glass.length],gx,whiteTop+h/2,gz,.10,h-.3,.62,ga);for(let y=whiteTop+.3;y<top;y+=3.15)box(M.frame,gx-.09,y,gz,.12,.065,.64,ga);}
   }
   // Angular planted beds, cut by the paved circulation network.
   const beds=[
-   [[-35,-24],[-18,-24],[-21,-18],[-35,-16]], [[-35,-14],[-31,-16],[-31,-6],[-35,-3]],
-   [[-35,0],[-18,-3],[-18,5],[-35,8]], [[-35,19],[-15,20],[-9,26],[-34,24]],
-   [[-12,22],[-2,23],[3,28],[-6,28]], [[3,24],[15,24],[18,28],[7,28]],
-   [[21,21],[29,18],[24,27],[20,28]], [[21,5],[29,2],[30,14],[21,18]],
-   [[21,-9],[29,-12],[30,-1],[21,2]], [[19,-23],[27,-24],[28,-15],[20,-12]],
-   [[-14,-25],[1,-25],[1,-21],[-13,-20]], [[4,-25],[16,-25],[17,-21],[4,-21]]
+   [[-15.45,-25.51],[-13.04,-21.16],[-22.04,-22.19],[-28.98,-26.24]],
+   [[-30.76,-26.07],[-29.21,-21.01],[-35.65,-17.62],[-36.88,-26.84]],
+   [[-29.66,-16.17],[-26.33,-11.39],[-32.57,-4.5],[-35.98,-6.02],[-36.43,-15.09]],
+   [[-32.51,-3.55],[-29.41,1.28],[-33.31,7.14],[-35.4,4.93],[-36.04,-4.12]],
+   [[-33.09,7.51],[-28.64,12.15],[-32.85,19.07],[-34.62,18.71],[-35.49,6.45]],
+   [[-20.9,13.93],[-22.82,21.1],[-28.05,20.55],[-26.97,16.14]],
+   [[-11.03,19.07],[-11.84,25.37],[-18.95,24.18],[-17.92,18.55]],
+   [[15,-19.05],[14.07,-12.55],[8.1,-12.79],[9.2,-19.66]],
+   [[13.2,-10.5],[9.8,29],[5.6,28.3],[9.2,16],[10.2,-10.5]],
+   [[-25.5,26],[-19.5,25],[-20,29.2],[-28,27.7]]
   ];
   function inside(x,z,p){let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i],b=p[j];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])yes=!yes;}return yes;}
   let seed=292;const rnd=()=>{seed=seed*16807%2147483647;return(seed-1)/2147483646};
@@ -110,19 +131,19 @@
   const blades=new T.BufferGeometry();blades.setAttribute('position',new T.Float32BufferAttribute(bladePos,3));blades.computeVertexNormals();geo.push(blades);const grass=material(0xb8c1ae,{side:T.DoubleSide,roughness:1});
   beds.forEach((p,bi)=>{solid(p,.04,.18,M.curb);const cx=p.reduce((s,v)=>s+v[0],0)/p.length,cz=p.reduce((s,v)=>s+v[1],0)/p.length,inner=p.map(([x,z])=>[cx+(x-cx)*.95,cz+(z-cz)*.95]);polygon(inner,.23,M.soil);
    const xs=p.map(v=>v[0]),zs=p.map(v=>v[1]),xmin=Math.min(...xs),xmax=Math.max(...xs),zmin=Math.min(...zs),zmax=Math.max(...zs);
-   for(let i=0;i<125;i++){const x=xmin+rnd()*(xmax-xmin),z=zmin+rnd()*(zmax-zmin);if(!inside(x,z,inner))continue;const sc=.35+rnd()*.55;
-    if(i%3===0)stamp(blades,grass,x,.24,z,sc*1.4,sc*1.7,sc*1.4,rnd()*Math.PI*2);
-    else if(i%3===1)stamp(shrub,plants[(bi+i)%plants.length],x,.35+sc*.35,z,sc,.25+sc*.5,sc*.8,rnd()*6.28);
-    else {stamp(cone,plants[(bi+i)%plants.length],x,.5,z,.15,.55+rnd()*.35,.15);stamp(shrub,plants[(bi+6)%plants.length],x,.82,z,.19,.12,.18);}
+   for(let i=0;i<320;i++){const x=xmin+rnd()*(xmax-xmin),z=zmin+rnd()*(zmax-zmin);if(!inside(x,z,inner))continue;const sc=.28+rnd()*.35,patch=(Math.floor((x-cx)/1.8)+Math.floor((z-cz)/1.8)+bi*3+64)%8;
+    if(i%5<3)stamp(blades,grass,x,.24,z,sc*1.5,sc*1.9,sc*1.5,rnd()*Math.PI*2);
+    else if(i%5===3)stamp(shrub,plants[[0,1,2,7,0,2,5,1][patch]],x,.27+sc*.3,z,sc,.14+sc*.35,sc*.8,rnd()*6.28);
+    else {const hh=.4+rnd()*.35;stamp(cone,plants[patch===6?5:7],x,.24+hh/2,z,.10,hh,.10);stamp(shrub,plants[patch===6?5:2],x,.24+hh,z,.11,.07,.11);}
    }
   });
   // Mixed green and autumn trees with visible trunks/branches and multiple crown masses.
-  const trees=[[-24,-21],[-24,-9],[-24,3],[-22,22],[-9,25],[10,26],[26,18],[25,8],[25,-5],[24,-20],[-7,-23],[9,-23]];
+  const trees=[[-18,-24],[-31,-24],[-33,-13],[-33,-1],[-32,12],[-24,18],[-14,22],[11,-16],[11,2],[9,18]];
   trees.forEach(([x,z],i)=>{const h=3.0+(i%3)*.65;branch([x,.25,z],[x,h,z],.10);
-   for(let j=0;j<7;j++){const a=j*2.399,rad=.45+(j%3)*.35,ex=x+Math.cos(a)*rad,ez=z+Math.sin(a)*rad,ey=h+(j%3)*.5;branch([x,h*.65,z],[ex,ey,ez],.035);stamp(ball,plants[i%4===0?5:(i%4===1?4:(j%2?0:7))],ex,ey+.45,ez,.55+(j%2)*.16,.85,.62,j);}
+   for(let j=0;j<12;j++){const a=j*2.399,rad=.35+(j%3)*.32,ex=x+Math.cos(a)*rad,ez=z+Math.sin(a)*rad,ey=h+(j%3)*.45;branch([x,h*.65,z],[ex,ey,ez],.025);stamp(shrub,plants[i%4===0?5:(i%4===1?4:(j%2?0:7))],ex,ey+.3,ez,.42+(j%2)*.13,.60,.47,j);}
   });
   // Pergola/play pavilion: slim posts, layered roof, timber platform, hanging white rings.
-  const px=-24.5,pz=-13.5;
+  const px=-11.5,pz=-18.7;
   for(let i=0;i<28;i++)box(M.wood,px-5.4+i*.4,.18,pz,.37,.25,5.7);
   for(const x of [px-5.5,px,px+5.5])for(const z of [pz-2.8,pz+2.8])box(M.light,x,2.05,z,.09,3.8,.09);
   for(const x of [px-2.8,px+2.8]){box(M.roof,x,4.02,pz,5.8,.10,6.9);box(M.light,x,3.91,pz,5.8,.08,6.6);}
@@ -133,12 +154,12 @@
   for(const [x,z] of [[-14,13],[-12,15],[-10,17]])stamp(ball,M.light,x,.4,z,.65,.35,.45);
   for(const [x,z] of [[-28,14],[-17,15],[-21,9]])stamp(cylinder,M.light,x,.45,z,.28,.8,.28);
   function bench(x,z,angle=0){for(let j=0;j<5;j++)box(M.wood,x,.65,z+(j-2)*.14,2.4,.08,.12,angle);for(const d of [-.9,.9])box(M.steel,x+d,.35,z,.08,.6,.6,angle);for(let j=0;j<3;j++)box(M.wood,x,1.0+j*.13,z-.36,2.4,.10,.08,angle);}
-  bench(-20,16);bench(-25,10);bench(22,19);bench(23,-15);
-  for(const [x,z] of [[-16,18],[-27,-3],[21,-17],[22,12],[-4,24]]){stamp(cylinder,M.steel,x,2.3,z,.055,4.3,.055);stamp(cylinder,M.steel,x,4.46,z,.43,.075,.43);stamp(cylinder,M.light,x,4.40,z,.35,.045,.35);}
+  bench(-24,-18,.5);bench(-22,-8,.5);bench(-20,22);bench(9,-9);
+  for(const [x,z] of [[-22,-20],[-27,-6],[-21,23],[10,14],[-30,22]]){stamp(cylinder,M.steel,x,2.3,z,.055,4.3,.055);stamp(cylinder,M.steel,x,4.46,z,.43,.075,.43);stamp(cylinder,M.light,x,4.40,z,.35,.045,.35);}
   // Fine paving joints at the entrance plaza and low cylindrical site furniture.
-  for(const [x,z] of [[-16,8],[-17,20],[20,-7],[18,23]])stamp(cylinder,M.steel,x,.5,z,.16,.95,.16);
+  for(const [x,z] of [[-22,-16],[-19,19],[10,-8],[6,26]])stamp(cylinder,M.steel,x,.5,z,.16,.95,.16);
   batches.forEach(({G,m,list})=>{const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=mesh.receiveShadow=true;vpm.add(mesh)});
-  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,continuousPodium:true,raisedRoofShoulder:true,projectingServiceRoom:true,roofScreen:true,roofBlades,bladeAxis:'z',obliqueWhiteFront:true,whitePlan,portalDepth:.94,upperBrownBays:true,podiumOverhang:1.065,pergola:true,hangingRings:2,mixedPlanting:true};
+  root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,continuousPodium:true,raisedRoofShoulder:true,projectingServiceRoom:true,roofScreen:true,roofBlades,bladeAxis:'z',obliqueWhiteFront:true,whitePlan,facetedWhiteFront:true,frontFacets:3,fannedUpperPanels:true,diagonalLandscape:true,site,playPlan,portalDepth:.94,upperBrownBays:true,podiumOverhang:1.065,pergola:true,hangingRings:2,mixedPlanting:true};
   return{root,g,radius:Math.max(Math.hypot(63,57)/2,82.6*.95),maxH:82.6};
  }
  global.GranPhotoTower={build};
