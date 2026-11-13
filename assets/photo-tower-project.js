@@ -20,8 +20,8 @@
   const podiumBrick=material(0xa48f80,{map:texture('brick'),roughness:.94});
   const plants=[0x6f895c,0x8ea27f,0xb4c0ad,0xa79461,0x96736a,0xa35142,0xc1b582,0xabc0a3].map(c=>material(c,{roughness:1,flatShading:true}));
   const unit=new T.BoxGeometry(1,1,1),ball=new T.IcosahedronGeometry(1,2),shrub=new T.IcosahedronGeometry(1,1),cylinder=new T.CylinderGeometry(1,1,1,8),cone=new T.ConeGeometry(1,1,6);geo.push(unit,ball,shrub,cylinder,cone);
-  const rear={x:7.2,z:-.5,rx:6.4,rz:12.9,base:6.2,floors:24,step:3.15};let landscaping=false;
-  const insideRear=(x,z)=>x>=rear.x&&((x-rear.x)/6.65)**2+((z-rear.z)/13.15)**2<1;
+  const rear={x:7.2,z:-.5,rx:6.4,rz:12.9,base:6.2,floors:24,step:3.15,projectionScale:1.25};let landscaping=false;
+  const insideRear=(x,z)=>x>=rear.x&&((x-rear.x)/(6.65*rear.projectionScale))**2+((z-rear.z)/13.15)**2<1;
   function stamp(G,m,x,y,z,sx,sy,sz,ry=0,q=null){if(landscaping&&insideRear(x,z))return;let b=batches.get(G.uuid+':'+m.uuid);if(!b)batches.set(G.uuid+':'+m.uuid,b={G,m,list:[]});dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,ry,0);if(q)dummy.quaternion.copy(q);dummy.updateMatrix();b.list.push(dummy.matrix.clone());}
   const box=(m,x,y,z,w,h,d,a=0)=>stamp(unit,m,x,y,z,w,h,d,a);
   function branch(a,b,r){const va=new T.Vector3(...a),vb=new T.Vector3(...b),v=vb.clone().sub(va),mid=va.add(vb).multiplyScalar(.5),q=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),v.clone().normalize());stamp(cylinder,M.trunk,mid.x,mid.y,mid.z,r,v.length(),r,0,q);}
@@ -176,7 +176,7 @@
   batches.forEach(({G,m,list})=>{const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=mesh.receiveShadow=true;vpm.add(mesh)});
   // Additive rear half-oval at the original rear plane near X = 7.2: the white
   // front, roof screens, original brown bar and front podium are untouched.
-  const annex=new T.Group();annex.name='rear-oval-annex';annex.userData.reference={...rear};vpm.add(annex);
+  const annex=new T.Group();annex.name='rear-oval-annex';annex.scale.x=rear.projectionScale;annex.position.x=rear.x*(1-rear.projectionScale);annex.userData.reference={...rear,rx:rear.rx*rear.projectionScale};vpm.add(annex);
   const copper=material(0x967363,{metalness:.22,roughness:.64}),innerShell=material(0x3c3531),partition=material(0x9b8d80);
   const guard=material(0xaab8b9,{transparent:true,opacity:.22,depthWrite:false,side:T.DoubleSide,roughness:.19,metalness:.08});
   const darkGlass=GranVisual.glass(material(0x343e43,{roughness:.24,metalness:.12}));
@@ -212,7 +212,7 @@
   }
   rearBatches.forEach(({G,m,list})=>{const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=m!==guard;mesh.receiveShadow=true;annex.add(mesh)});
   root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,continuousPodium:true,raisedRoofShoulder:true,projectingServiceRoom:true,roofScreen:true,roofBlades,bladeAxis:'z',obliqueWhiteFront:true,whitePlan,facetedWhiteFront:true,frontFacets:3,fannedUpperPanels:true,diagonalLandscape:true,site,playPlan,portalDepth:.94,upperBrownBays:true,podiumOverhang:1.065,pergola:true,hangingRings:2,mixedPlanting:true};
-  root.userData.reference.rearOval={...rear,frontPreserved:true};
+  root.userData.reference.rearOval={...rear,rx:rear.rx*rear.projectionScale,frontPreserved:true};
   return{root,g,radius:Math.max(Math.hypot(63,57)/2,82.6*.95),maxH:82.6};
  }
  global.GranPhotoTower={build};
