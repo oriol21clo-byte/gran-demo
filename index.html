@@ -859,7 +859,7 @@ body{background-image:none}
         <div class="res2" aria-live="polite">
           <div><div class="label" style="color:#9AA6B6">Ориентировочная стоимость</div><div class="tot" id="rTotal">—</div><div class="sub" id="rSub">—</div></div>
           <button class="btn btn-white" id="kpBtn">Скачать КП (PDF)</button>
-          <p class="fine" style="grid-column:1/-1">Цена = площадь × тариф × коэффициент площади × фасады × благоустройство; для ЦИМ — дополнительно коэффициент BIM. Границы: до 50 000 м² — 1,25; от 50 000 — 1; от 100 000 — 0,9; от 200 000 — 0,85.</p><div class="lines" id="rLines"></div>
+          <div class="lines" id="rLines"></div>
         </div>
       </div>
       <div class="kpbox">
@@ -1887,7 +1887,7 @@ let calcViewer, lastCalc;
     if (!r.sel.length) { $('#rTotal').textContent = '—'; $('#rSub').textContent = 'Выберите хотя бы одну модель'; $('#rLines').innerHTML = '' }
     else {
       $('#rTotal').textContent = fmtMoney(r.total) + ' ₽'; $('#rSub').textContent = `Предварительный срок: ${r.days} раб. дней · без НДС`;
-      $('#rLines').innerHTML = r.lines.map(l => `<div><span>${l.name}</span><b>${fmtMoney(l.sum)} ₽</b></div>`).join('') + (r.disc ? `<div><span>Скидка за комплект, ${Math.round(r.dRate * 100)} %</span><b>−${fmtMoney(r.disc)} ₽</b></div>` : '');
+      $('#rLines').innerHTML = r.lines.map(l => `<div><span>${PRICING.models[l.key].name}</span><b>${fmtMoney(l.sum)} ₽</b></div>`).join('') + (r.disc ? `<div><span>Скидка за комплект, ${Math.round(r.dRate * 100)} %</span><b>−${fmtMoney(r.disc)} ₽</b></div>` : '');
     }
     if(priceOnly===true)return;
     const allow = r.sel.length ? r.sel : ['npm', 'vpm', 'cim'];
