@@ -20,7 +20,9 @@
   const podiumBrick=material(0xa48f80,{map:texture('brick'),roughness:.94});
   const plants=[0x6f895c,0x8ea27f,0xb4c0ad,0xa79461,0x96736a,0xa35142,0xc1b582,0xabc0a3].map(c=>material(c,{roughness:1,flatShading:true}));
   const unit=new T.BoxGeometry(1,1,1),ball=new T.IcosahedronGeometry(1,2),shrub=new T.IcosahedronGeometry(1,1),cylinder=new T.CylinderGeometry(1,1,1,8),cone=new T.ConeGeometry(1,1,6);geo.push(unit,ball,shrub,cylinder,cone);
-  function stamp(G,m,x,y,z,sx,sy,sz,ry=0,q=null){let b=batches.get(G.uuid+':'+m.uuid);if(!b)batches.set(G.uuid+':'+m.uuid,b={G,m,list:[]});dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,ry,0);if(q)dummy.quaternion.copy(q);dummy.updateMatrix();b.list.push(dummy.matrix.clone());}
+  const rear={x:7.2,z:-.5,rx:6.4,rz:12.9,base:6.2,floors:24,step:3.15};let landscaping=false;
+  const insideRear=(x,z)=>x>=rear.x&&((x-rear.x)/6.65)**2+((z-rear.z)/13.15)**2<1;
+  function stamp(G,m,x,y,z,sx,sy,sz,ry=0,q=null){if(landscaping&&insideRear(x,z))return;let b=batches.get(G.uuid+':'+m.uuid);if(!b)batches.set(G.uuid+':'+m.uuid,b={G,m,list:[]});dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,ry,0);if(q)dummy.quaternion.copy(q);dummy.updateMatrix();b.list.push(dummy.matrix.clone());}
   const box=(m,x,y,z,w,h,d,a=0)=>stamp(unit,m,x,y,z,w,h,d,a);
   function branch(a,b,r){const va=new T.Vector3(...a),vb=new T.Vector3(...b),v=vb.clone().sub(va),mid=va.add(vb).multiplyScalar(.5),q=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),v.clone().normalize());stamp(cylinder,M.trunk,mid.x,mid.y,mid.z,r,v.length(),r,0,q);}
   function shape(p,round=0){const s=new T.Shape();p.forEach(([x,z],i)=>{const a=p[(i+p.length-1)%p.length],b=p[(i+1)%p.length],r=Array.isArray(round)?round[i]:round,pa=new T.Vector2(a[0]-x,a[1]-z).normalize().multiplyScalar(r),pb=new T.Vector2(b[0]-x,b[1]-z).normalize().multiplyScalar(r);i?s.lineTo(x+pa.x,-z-pa.y):s.moveTo(x+pa.x,-z-pa.y);s.quadraticCurveTo(x,-z,x+pb.x,-z-pb.y)});s.closePath();return s;}
@@ -123,6 +125,7 @@
    if(j<3){const gz=z+3,gx=-7.4+bow(gz),ga=turn(gz);box(glass[(j+2)%glass.length],gx,whiteTop+h/2,gz,.10,h-.3,.62,ga);for(let y=whiteTop+.3;y<top;y+=3.15)box(M.frame,gx-.09,y,gz,.12,.065,.64,ga);}
   }
   // Angular planted beds, cut by the paved circulation network.
+  landscaping=true;
   const beds=[
    [[-15.45,-25.51],[-13.04,-21.16],[-22.04,-22.19],[-28.98,-26.24]],
    [[-30.76,-26.07],[-29.21,-21.01],[-35.65,-17.62],[-36.88,-26.84]],
@@ -169,8 +172,47 @@
   for(const [x,z] of [[-22,-20],[-27,-6],[-21,23],[10,14],[-30,22]]){stamp(cylinder,M.steel,x,2.3,z,.055,4.3,.055);stamp(cylinder,M.steel,x,4.46,z,.43,.075,.43);stamp(cylinder,M.light,x,4.40,z,.35,.045,.35);}
   // Fine paving joints at the entrance plaza and low cylindrical site furniture.
   for(const [x,z] of [[-22,-16],[-19,19],[10,-8],[6,26]])stamp(cylinder,M.steel,x,.5,z,.16,.95,.16);
+  landscaping=false;
   batches.forEach(({G,m,list})=>{const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=mesh.receiveShadow=true;vpm.add(mesh)});
+  // Additive rear half-oval at the original rear plane near X = 7.2: the white
+  // front, roof screens, original brown bar and front podium are untouched.
+  const annex=new T.Group();annex.name='rear-oval-annex';annex.userData.reference={...rear};vpm.add(annex);
+  const copper=material(0x967363,{metalness:.22,roughness:.64}),innerShell=material(0x3c3531),partition=material(0x9b8d80);
+  const guard=material(0xaab8b9,{transparent:true,opacity:.22,depthWrite:false,side:T.DoubleSide,roughness:.19,metalness:.08});
+  const darkGlass=GranVisual.glass(material(0x343e43,{roughness:.24,metalness:.12}));
+  const rearBatches=new Map(),rd=new T.Object3D();
+  function rearStamp(G,m,x,y,z,sx=1,sy=1,sz=1,angle=0){let b=rearBatches.get(G.uuid+':'+m.uuid);if(!b)rearBatches.set(G.uuid+':'+m.uuid,b={G,m,list:[]});rd.position.set(x,y,z);rd.scale.set(sx,sy,sz);rd.rotation.set(0,angle,0);rd.updateMatrix();b.list.push(rd.matrix.clone());}
+  const rearBox=(m,x,y,z,w,h,d,a=0)=>rearStamp(unit,m,x,y,z,w,h,d,a);
+  const ep=(rx,rz,a)=>({x:rear.x+rx*Math.cos(a),z:rear.z+rz*Math.sin(a)});
+  function halfShape(rx,rz,innerX=0,innerZ=0){const s=new T.Shape(),N=64;for(let i=0;i<=N;i++){const p=ep(rx,rz,-Math.PI/2+Math.PI*i/N);i?s.lineTo(p.x,-p.z):s.moveTo(p.x,-p.z);}if(innerX)for(let i=N;i>=0;i--){const p=ep(innerX,innerZ,-Math.PI/2+Math.PI*i/N);s.lineTo(p.x,-p.z);}s.closePath();return s;}
+  function slabGeometry(rx,rz,innerX=0,innerZ=0){const G=new T.ExtrudeGeometry(halfShape(rx,rz,innerX,innerZ),{depth:1,bevelEnabled:false,curveSegments:1});G.rotateX(-Math.PI/2);geo.push(G);return G;}
+  function glassArc(rx,rz){const pos=[],norm=[],ix=[],N=64;for(let i=0;i<=N;i++){const a=-Math.PI/2+Math.PI*i/N,p=ep(rx,rz,a),n=new T.Vector3(Math.cos(a)/rx,0,Math.sin(a)/rz).normalize();for(const y of [0,1]){pos.push(p.x,y,p.z);norm.push(n.x,0,n.z);}if(i<N){const j=i*2;ix.push(j,j+1,j+2,j+1,j+3,j+2);}}const G=new T.BufferGeometry();G.setAttribute('position',new T.Float32BufferAttribute(pos,3));G.setAttribute('normal',new T.Float32BufferAttribute(norm,3));G.setIndex(ix);geo.push(G);return G;}
+  const floorG=slabGeometry(rear.rx,rear.rz),railG=slabGeometry(6.35,12.85,6.30,12.80),guardG=glassArc(6.30,12.80);
+  // Ground and glazed rear base belong only to the new rear footprint.
+  rearStamp(slabGeometry(8.1,14.3),M.roof,0,-.8,0,1,.8,1);
+  rearStamp(slabGeometry(8.0,14.2),M.pave,0,.015,0,1,.04,1);
+  rearStamp(slabGeometry(6.55,13.05),M.frame,0,.08,0,1,.30,1);
+  rearStamp(slabGeometry(5.98,12.48),innerShell,0,.38,0,1,4.7,1);
+  rearStamp(slabGeometry(6.55,13.05,6.15,12.65),copper,0,4.95,0,1,1.05,1);
+  rearStamp(slabGeometry(4.0,10.7),innerShell,0,rear.base,0,1,75.6,1);
+  for(let j=0;j<24;j++){const a0=-Math.PI/2+Math.PI*j/24,a1=-Math.PI/2+Math.PI*(j+1)/24,p=ep(6.15,12.65,a0),q=ep(6.15,12.65,a1),dx=q.x-p.x,dz=q.z-p.z,L=Math.hypot(dx,dz),a=-Math.atan2(dz,dx);rearBox(darkGlass,(p.x+q.x)/2,2.65,(p.z+q.z)/2,L-.045,4.5,.10,a);rearBox(copper,p.x,2.65,p.z,.07,4.55,.12,a);}
+  for(let f=0;f<=rear.floors;f++){
+   const y=rear.base+f*rear.step;rearStamp(floorG,M.white,0,y,0,1,.22,1);
+   const gh=f===rear.floors?.50:1.02;rearStamp(guardG,guard,0,y+.24,0,1,gh,1);rearStamp(railG,M.edge,0,y+.24+gh,0,1,.045,1);
+   if(f===rear.floors)continue;
+   // Inset apartment glazing behind the open balcony depth.
+   for(let j=0;j<24;j++){const a0=-Math.PI/2+Math.PI*j/24,a1=-Math.PI/2+Math.PI*(j+1)/24,p=ep(4.18,10.88,a0),q=ep(4.18,10.88,a1),dx=q.x-p.x,dz=q.z-p.z,a=-Math.atan2(dz,dx);rearBox((j+f)%5===0?glass[0]:darkGlass,(p.x+q.x)/2,y+1.68,(p.z+q.z)/2,Math.hypot(dx,dz)-.045,2.70,.10,a);}
+   // Paired bronze piers alternate by half a bay, as on the references.
+   const bay=Math.PI/10;
+   for(let j=0;j<=10;j++){let a=-Math.PI/2+j*bay;if(j>0&&j<10&&f%2)a+=bay*.45;const p=ep(6.10,12.60,a),tx=-6.10*Math.sin(a),tz=12.60*Math.cos(a),L=Math.hypot(tx,tz),angle=-Math.atan2(tz,tx);
+    for(const side of [-1,1])rearBox(copper,Math.max(rear.x+.24,p.x)+side*.125*tx/L,y+1.68,p.z+side*.125*tz/L,.19,2.85,.32,angle);
+    if(j>0&&j<10){const q=ep(4.30,11.0,a),dx=p.x-q.x,dz=p.z-q.z;rearBox(partition,(p.x+q.x)/2,y+1.65,(p.z+q.z)/2,Math.hypot(dx,dz)-.30,2.70,.10,-Math.atan2(dz,dx));}
+   }
+   for(let j=1;j<30;j++){const a=-Math.PI/2+Math.PI*j/30,p=ep(6.22,12.72,a);rearBox(M.edge,p.x,y+1.66,p.z,.025,2.80,.025);}
+  }
+  rearBatches.forEach(({G,m,list})=>{const mesh=new T.InstancedMesh(G,m,list.length);list.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=m!==guard;mesh.receiveShadow=true;annex.add(mesh)});
   root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={name:'Project 2 from supplied photos',estimated:true,brownWhiteTower:true,whitePortalMouldings:true,brickPodium:true,continuousPodium:true,raisedRoofShoulder:true,projectingServiceRoom:true,roofScreen:true,roofBlades,bladeAxis:'z',obliqueWhiteFront:true,whitePlan,facetedWhiteFront:true,frontFacets:3,fannedUpperPanels:true,diagonalLandscape:true,site,playPlan,portalDepth:.94,upperBrownBays:true,podiumOverhang:1.065,pergola:true,hangingRings:2,mixedPlanting:true};
+  root.userData.reference.rearOval={...rear,frontPreserved:true};
   return{root,g,radius:Math.max(Math.hypot(63,57)/2,82.6*.95),maxH:82.6};
  }
  global.GranPhotoTower={build};

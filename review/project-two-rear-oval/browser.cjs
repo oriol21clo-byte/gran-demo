@@ -1,0 +1,14 @@
+const fs=require('fs'),path=require('path'),{chromium}=require('playwright');
+(async()=>{const b=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+try{for(const before of process.env.GRAN_BASELINE_FILE?[true,false]:[false]){
+ const p=await b.newPage({viewport:{width:1440,height:1050}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
+ if(before)await p.route('**/assets/photo-tower-project.js',r=>r.fulfill({path:path.resolve(process.env.GRAN_BASELINE_FILE),contentType:'application/javascript'}));
+ await p.addInitScript(()=>{window.__frames=[];window.requestAnimationFrame=cb=>(__frames.push(cb),__frames.length)});
+ await p.goto(process.env.GRAN_REVIEW_URL||'http://127.0.0.1:8059/',{waitUntil:'load'});await p.evaluate(()=>document.querySelector('[data-open="1"]').click());
+ const views=before?[['front',-Math.PI/2,1.05],['rear',Math.PI/2,1.06]]:[['front',-Math.PI/2,1.05],['rear',Math.PI/2,1.06],['rear-angle',1.05,1.12],['top',1.2,.35]];
+ for(const [name,theta,phi]of views){const u=await p.evaluate(({theta,phi})=>{const v=modalViewer;v.ctl.autoRotate=false;v.r.setPixelRatio(1);v.r.setSize(1050,1050,false);v.cam.zoom=1.25;v.place(theta,phi,v.dist);GranVisual.project(v.cam,1,v.dist);v.r.render(v.scene,v.cam);return v.canvas.toDataURL('image/jpeg',.92)},{theta,phi});fs.writeFileSync(path.join(__dirname,(before?'before-':'')+name+'.jpg'),Buffer.from(u.split(',')[1],'base64'));}
+ if(!before){for(const [name,night]of [['detail',false],['night',true]]){const u=await p.evaluate(night=>{const v=modalViewer;if(night){document.querySelector('#modal [data-project-time="night"]').click();v.cam.zoom=1.25;v.place(1.05,1.12,v.dist);}else{v.cam.zoom=3.8;v.cam.position.set(45,40,24);v.cam.lookAt(10.5,38,0);GranVisual.project(v.cam,1,v.dist);}v.r.render(v.scene,v.cam);return v.canvas.toDataURL('image/jpeg',.93)},night);fs.writeFileSync(path.join(__dirname,name+'.jpg'),Buffer.from(u.split(',')[1],'base64'));}
+ const perspective=await p.evaluate(()=>{const v=modalViewer,c=new THREE.PerspectiveCamera(48,850/1100,1,4000);c.position.set(55,16,45);c.lookAt(8,42,0);v.setLighting('day');v.r.setSize(850,1100,false);v.r.render(v.scene,c);return v.canvas.toDataURL('image/jpeg',.94)});fs.writeFileSync(path.join(__dirname,'rear-perspective.jpg'),Buffer.from(perspective.split(',')[1],'base64'));
+ await p.setViewportSize({width:390,height:844});const overflow=await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth);console.log(JSON.stringify({mobileOverflow:overflow}));if(overflow)throw Error('mobile overflow');}
+ console.log(JSON.stringify({before,errors}));if(errors.length)throw Error('JS errors');await p.close();
+}}finally{await b.close()}})().catch(e=>{console.error(e);process.exit(1)});
