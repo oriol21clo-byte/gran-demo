@@ -1886,7 +1886,7 @@ let calcViewer, lastCalc;
     $('#grpNV').hidden = !r.sel.length; $('#grpC').hidden = !p.models.cim;
     if (!r.sel.length) { $('#rTotal').textContent = '—'; $('#rSub').textContent = 'Выберите хотя бы одну модель'; $('#rLines').innerHTML = '' }
     else {
-      $('#rTotal').textContent = fmtMoney(r.total) + ' ₽'; $('#rSub').textContent = `Предварительный срок: ${r.days} раб. дней · без НДС`;
+      $('#rTotal').textContent = fmtMoney(r.total) + ' ₽'; $('#rSub').textContent = `Предварительный срок: ${r.days} раб. дней`;
       $('#rLines').innerHTML = r.lines.map(l => `<div><span>${PRICING.models[l.key].name}</span><b>${fmtMoney(l.sum)} ₽</b></div>`).join('') + (r.disc ? `<div><span>Скидка за комплект, ${Math.round(r.dRate * 100)} %</span><b>−${fmtMoney(r.disc)} ₽</b></div>` : '');
     }
     if(priceOnly===true)return;
