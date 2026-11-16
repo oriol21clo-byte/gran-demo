@@ -9,8 +9,9 @@
     const linear=c=>new T.Color(c).convertSRGBToLinear();
     const material=(c,o={})=>{const m=new T.MeshStandardMaterial(Object.assign({color:linear(c),roughness:.82,metalness:0},o));materials.push(m);return m};
     const R={white:material(0xe9e9e3),grey:material(0xb9c4c7),rib:material(0xcbd1d0),gold:material(0xc8aa61),red:material(0x9f543b),roof:material(0x414b50),joint:material(0xc8cccb),lawn:material(0x829565),pave:material(0xd3d7d2),light:material(0xe7e7df),play:material(0xb66f47),wood:material(0xae8255),steel:material(0x424e54),bark:material(0x797465),leaf:material(0xb5c4ab),silver:material(0xd4d9c5),shrub:material(0x91a47b),flower:material(0x9b8da4),grass:material(0xc3c7ae)};
-    const glazing=[0x465d68,0x70868d,0x9aa9a9,0x536f7e,0xb5bdb7].map(c=>GranVisual.glass(material(c,{roughness:.3,metalness:.12})));
+    const glazing=[0x536773,0x657b86,0x7d9098,0x536773,0x9aa9ac].map(c=>GranVisual.glass(material(c,{roughness:.3,metalness:.12})));
     const unit=new T.BoxGeometry(1,1,1),dummy=new T.Object3D(),batches=new Map();geo.push(unit);
+    const flute=new T.CylinderGeometry(1,1,1,12),flutes=[];geo.push(flute);
     function box(mat,x,y,z,w,h,d,angle=0,shadow=true){let list=batches.get(mat);if(!list)batches.set(mat,list=[]);list.push([x,y,z,w,h,d,angle,shadow]);}
     function shape(w,d,r){const s=new T.Shape(),x=-w/2,z=-d/2;s.moveTo(x+r,z);s.lineTo(x+w-r,z);s.quadraticCurveTo(x+w,z,x+w,z+r);s.lineTo(x+w,z+d-r);s.quadraticCurveTo(x+w,z+d,x+w-r,z+d);s.lineTo(x+r,z+d);s.quadraticCurveTo(x,z+d,x,z+d-r);s.lineTo(x,z+r);s.quadraticCurveTo(x,z,x+r,z);s.closePath();return s;}
     function volume(mat,x,y,z,w,h,d,r=0){if(!r){box(mat,x,y+h/2,z,w,h,d);return}const G=new T.ExtrudeGeometry(shape(w,d,r),{depth:h,bevelEnabled:false,curveSegments:6});G.rotateX(-Math.PI/2);geo.push(G);const mesh=new T.Mesh(G,mat);mesh.position.set(x,y,z);mesh.castShadow=mesh.receiveShadow=true;vpm.add(mesh);}
@@ -52,27 +53,58 @@
           const t=-L/2+margin+(j+.5)*sp,off=half+.025,px=x+(nx?nx*off:t),pz=z+(nz?nz*off:t),wy=y0+k*FH+1.55;
           const exposed=kind==='gold'||kind==='red',ww=sp*(exposed?.72:.45),wh=exposed?2.45:2.02;
           box(R.roof,px,wy,pz,nx?.10:ww+.14,wh+.15,nx?ww+.14:.10,0,false);
-          const index=(k*7+j*3+face*11)%19,gm=glazing[index===0?4:index<4?2:index<9?1:index<15?0:3];
+          const gm=glazing[(j+face)%3];
           box(gm,px+nx*.07,wy,pz+nz*.07,nx?.05:ww,wh,nx?ww:.05,0,false);
           // Slim mullions and occasional pale spandrels match the supplied facades.
           if(exposed){box(R.steel,px+nx*.1,wy,pz+nz*.1,nx?.035:.05,wh,nx?.05:.035,0,false);
-            if((j+face*2+k)%7===0)box(R.light,px+nx*.12,wy-.6,pz+nz*.12,nx?.04:ww*.36,1.1,nx?ww*.36:.04,0,false);}
+            if((j+face*2)%5===0&&k%4<2)box(R.light,px+nx*.12,wy-.6,pz+nz*.12,nx?.04:ww*.36,1.1,nx?ww*.36:.04,0,false);}
         }
         if(kind==='gold'||kind==='red'){
           for(let k=0;k<=f;k++)box(mat,x+nx*(half+.24),y0+k*FH,z+nz*(half+.24),nx?.5:w+.54,.24,nx?d+.54:.5);
           for(let j=0;j<=n;j++){const t=-L/2+margin+sp*j;box(mat,x+(nx?nx*(half+.22):t),y0+h/2,z+(nz?nz*(half+.22):t),nx?.4:.24,h,nx?.24:.4);}
         }else if(rounded){
           // Rounded pale pilasters read as vertical flutes, rather than a window grid.
-          for(let j=0;j<=n;j++){const t=-L/2+margin+sp*j;box(R.rib,x+(nx?nx*(half+.12):t),y0+h/2,z+(nz?nz*(half+.12):t),nx?.27:.4,h,nx?.4:.27);}
+          for(let j=0;j<=n;j++){const t=-L/2+margin+sp*j;
+            // Convex pilasters soften the scalloped silver elevations in the photos.
+            flutes.push([x+(nx?nx*(half-.08):t),y0+h/2,z+(nz?nz*(half-.08):t),.38,h,.38]);
+          }
         }else{
           for(let j=0;j<=n;j++){const t=-L/2+margin+sp*j;box(R.joint,x+(nx?nx*(half+.01):t),y0+h/2,z+(nz?nz*(half+.01):t),nx?.02:.026,h,nx?.026:.02,0,false);}
         }
       });
     }
     podiums.forEach(([x,z,w,d])=>{volume(R.white,x,0,z,w,6.2,d);facade(x,z,w,d,0,2,R.white,'pod');volume(R.roof,x,6.22,z,w-.8,.1,d-.8);});
+    // White towers have recessed corners and offset wings, visible in both roof views.
+    // Use one closed footprint per tier: overlapping boxes leave false facade seams.
+    function whiteOutline(w,d){const a=3.6,b=4.1;return [
+      [-w/2+a,-d/2],[w/2-b,-d/2],[w/2-b,-d/2+b],[w/2,-d/2+b],
+      [w/2,d/2-a],[w/2-a,d/2-a],[w/2-a,d/2],[-w/2+b,d/2],
+      [-w/2+b,d/2-b],[-w/2,d/2-b],[-w/2,-d/2+a],[-w/2+a,-d/2+a]];}
+    function whiteTier(x,z,y,w,d,f){
+      const pts=whiteOutline(w,d),sh=new T.Shape();pts.forEach(([a,b],i)=>i?sh.lineTo(a,-b):sh.moveTo(a,-b));sh.closePath();
+      const G=new T.ExtrudeGeometry(sh,{depth:f*3.1,bevelEnabled:false});G.rotateX(-Math.PI/2);geo.push(G);
+      const mass=new T.Mesh(G,R.white);mass.name='reference-white-tier';mass.position.set(x,y,z);mass.castShadow=mass.receiveShadow=true;vpm.add(mass);
+      polygon(R.roof,pts.map(([a,b])=>[x+a*.97,z+b*.97]),y+f*3.1+.025);
+      pts.forEach(([ax,az],i)=>{const [bx,bz]=pts[(i+1)%pts.length],dx=bx-ax,dz=bz-az,L=Math.hypot(dx,dz),nx=dz/L,nz=-dx/L,angle=-Math.atan2(dz,dx),n=Math.max(1,Math.round(L/3.15)),sp=L/n;
+        const faceBox=(mat,t,yy,ww,hh,dep,off=.04)=>box(mat,x+ax+dx*t+nx*off,yy,z+az+dz*t+nz*off,ww,hh,dep,angle,false);
+        for(let k=0;k<f;k++)for(let j=0;j<n;j++){
+          const t=(j+.5)/n,yy=y+k*3.1+1.56,ww=Math.min(1.48,sp*.49);
+          faceBox(R.roof,t,yy,ww+.16,2.24,.09);
+          // Align glazing vertically; no random bright checkerboard between floors.
+          faceBox(glazing[(j+i)%3],t,yy,ww,2.08,.045,.105);
+          faceBox(R.light,t,yy+.96,ww,.09,.06,.14);
+          faceBox(R.joint,t,yy, .055,2.08,.04,.14);
+          if(k%3===1&&j%3===1)faceBox(R.white,t,yy-.72,ww*.42,.55,.05,.16);
+        }
+        faceBox(R.white,.5,y+f*3.1+.31,L,.62,.24,-.1);
+        // Subtle vertical panel joints only; no contrasting horizontal floor stripes.
+        for(let j=1;j<n;j++)faceBox(R.joint,j/n,y+f*1.55,.025,f*3.1,.018,.012);
+      });
+    }
     const towers=spec.buildings;
     towers.forEach(b=>{const mat=R[b.finish],segments=b.tiers||[{w:b.w,d:b.d,f:b.f}],rounded=b.finish==='grey';let y=6.2;
       segments.forEach(t=>{const x=b.x+(t.x||0),z=b.z+(t.z||0),h=t.f*3.1,r=rounded?1.5:0;
+        if(b.finish==='white'){whiteTier(x,z,y,t.w,t.d,t.f);y+=h;return;}
         volume(mat,x,y,z,t.w,h,t.d,r);facade(x,z,t.w,t.d,y,t.f,mat,b.finish);
         volume(R.roof,x,y+h+.015,z,t.w-.65,.1,t.d-.65,Math.max(0,r-.3));
         if(rounded){
@@ -90,6 +122,8 @@
     for(let x=-27;x<=28;x+=5.5){box(R.white,x,3.5,18,.48,7,.48);box(R.white,x,3.5,23,.48,7,.48);}
     [18,23].forEach(z=>box(R.white,.5,7.15,z,56,.42,.6));
     for(let x=-27;x<29;x+=1.25)box(R.steel,x,7.5,20.5,.1,.12,5.6,0,false);
+    // Slatted white infill alternates with the open portals of the courtyard gallery.
+    for(let x=1;x<27;x+=.7){if(Math.floor((x-1)/5.5)%2===0)box(R.white,x,3.6,23,.11,5.8,.18,0,false);}
     // Palette-specific instancing for planting: shared low-poly clusters, no alpha cards.
     const crown=new T.IcosahedronGeometry(1,1),smallCrown=new T.IcosahedronGeometry(1,0),trunk=new T.CylinderGeometry(.12,.2,1,7),cone=new T.ConeGeometry(1,1,8);geo.push(crown,smallCrown,trunk,cone);
     const foliage=new Map();let seed=941;const rnd=()=>(seed=seed*16807%2147483647)/2147483647;
@@ -123,10 +157,12 @@
     // Flush batches keep the richer facade and planting economical on the GPU.
     function instances(G,mat,list,shadow){const im=new T.InstancedMesh(G,mat,list.length);list.forEach((a,i)=>{dummy.position.set(a[0],a[1],a[2]);dummy.scale.set(a[3],a[4],a[5]);dummy.rotation.set(0,a[6]||0,0);dummy.updateMatrix();im.setMatrixAt(i,dummy.matrix)});im.instanceMatrix.needsUpdate=true;im.castShadow=shadow;im.receiveShadow=true;vpm.add(im);}
     batches.forEach((list,mat)=>{for(const shadow of [true,false]){const subset=list.filter(a=>a[7]===shadow);if(subset.length)instances(unit,mat,subset,shadow)}});
+    instances(flute,R.rib,flutes,true);
     foliage.forEach(b=>instances(b.G,b.mat,b.list,b.shadow));
     const maxH=Math.max(...towers.map(b=>6.2+(b.tiers?b.tiers.reduce((s,t)=>s+t.f,0):b.f)*3.1))+1.4;
-    root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={towers:6,estimated:true,landscape:'two courtyards, public garden, diagonal paths, pergola'};
+    root.userData.geo=geo;root.userData.materials=materials;root.userData.reference={towers:6,recessedWhiteFootprints:true,roundedPilasters:true,alignedGlazing:true,estimated:true,landscape:'two courtyards, public garden, diagonal paths, pergola'};
     return {root,g,radius:Math.max(Math.hypot(132,122)/2,maxH*.95),maxH};
   }
   global.GranReference={build};
 })(window);
+
