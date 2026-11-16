@@ -6,7 +6,7 @@ const h=fs.readFileSync('index.html','utf8');vm.runInContext(h.slice(h.indexOf('
 for(const [i,p] of ctx.PROJECTS.entries()){
  const m=ctx.build(p.spec);assert(m.root.userData.geo.length);let tris=0,meshes=0;
  m.root.updateMatrixWorld(true);m.root.traverse(o=>{if(!o.geometry)return;const a=o.geometry.attributes.position.array;assert(Array.from(a).every(Number.isFinite),'nonfinite mesh');if(o.isMesh){meshes++;tris+=(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3*(o.count||1)}if(o.isInstancedMesh)assert(Array.from(o.instanceMatrix.array).every(Number.isFinite),'bad instance');});
- if(i===0){assert.deepEqual(Object.keys(m.g),['vpm']);assert.equal(m.root.userData.reference.towers,6);assert(tris<600000,'reference geometry budget');assert(m.maxH>80&&m.maxH<100)}
+ if(i===0){assert.deepEqual(Object.keys(m.g),['vpm']);assert.equal(m.root.userData.reference.towers,6);assert(tris<600000,'reference geometry budget');assert(m.maxH>80&&m.maxH<100);const white=m.g.vpm.children.filter(o=>o.name==='reference-white-tier');assert.equal(white.length,6);const front=x=>new THREE.Raycaster(new THREE.Vector3(x,20,-100),new THREE.Vector3(0,0,1)).intersectObjects(white)[0].point.z;assert(front(-52.5)>front(-41)+3,'white tower corner is recessed in actual geometry');assert(meshes<110,'first-project instancing draw budget')}
  if(i===1){assert.deepEqual(Object.keys(m.g),['vpm']);const ref=m.root.userData.reference;assert(ref.brownWhiteTower&&ref.whitePortalMouldings&&ref.brickPodium&&ref.roofScreen&&ref.pergola&&ref.mixedPlanting);assert.equal(ref.hangingRings,2);assert(ref.estimated);assert(m.maxH>80&&m.maxH<85);
   const brownCore=m.g.vpm.children.find(o=>o.isMesh&&!o.isInstancedMesh&&o.geometry.type==='BoxGeometry'&&o.geometry.parameters.width===7&&o.geometry.parameters.depth===27);assert(brownCore,'original brown bar exists');
   const brownWidthHit=new THREE.Raycaster(new THREE.Vector3(30,40,8),new THREE.Vector3(-1,0,0)).intersectObject(brownCore);assert(brownWidthHit.length&&Math.abs(brownWidthHit[0].point.x-7)<.001,'original brown bar remains thin behind rear annex');
@@ -50,3 +50,4 @@ assert.equal(ca,56,'sidewalk area minus crossing');
 const mat=vm.runInContext('mats()',ctx);assert.equal(mat.npm.color.getHex(),mat.npmTree.color.getHex());
 const fakeRenderer={shadowMap:{}};const rig=ctx.GranVisual.create(new THREE.Scene(),fakeRenderer,false);for(const mode of ['npm','vpm','cim']){ctx.GranVisual.apply(rig,mode);assert.equal(fakeRenderer.shadowMap.enabled,mode!=='cim')}
 console.log('Geometry, road union, mode styles: PASS');
+
